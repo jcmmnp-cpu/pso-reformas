@@ -51,6 +51,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0-.83-.83-.83-2.17 0-3L12 9"/><path d="M17.62 10.62c.7-.7.7-1.84 0-2.54l-2.2-2.2a1.8 1.8 0 0 0-2.54 0L10.3 8.46M12 9l3 3M16 3l5 5"/></svg>
         Obras
       </button>
+      <button class="tab-btn" data-tab="obras-concluidas">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-square"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Concluídas
+      </button>
       <button class="tab-btn" data-tab="backups">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Backup & Sinc
@@ -67,7 +71,7 @@
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button id="btn-backup-topo" class="btn btn-secondary">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-cloud"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></svg>
-              Gerar Backup Orçamentário
+              Gerar Backup
             </button>
             <button id="btn-novo-orcamento" class="btn btn-primary">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -103,6 +107,17 @@
         </div>
         
         <div id="obras-list" class="card-grid">
+          <!-- Inserido dinamicamente via JS -->
+        </div>
+      </section>
+
+      <!-- ================= SEÇÃO OBRAS CONCLUÍDAS ================= -->
+      <section id="view-obras-concluidas" class="view-section">
+        <div class="section-header">
+          <h2 class="section-title">Obras Concluídas</h2>
+        </div>
+        
+        <div id="obras-concluidas-list" class="card-grid">
           <!-- Inserido dinamicamente via JS -->
         </div>
       </section>
@@ -456,6 +471,25 @@
   </div>
 
   <!-- ========================================== -->
+  <!-- MODAL: CONFIRMAÇÃO CUSTOMIZADA             -->
+  <!-- ========================================== -->
+  <div id="modal-confirm-overlay" class="modal-overlay" style="z-index: 1400;">
+    <div class="modal-container modal-alert">
+      <div id="confirm-modal-icon" class="alert-icon danger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#E74C3C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h3 id="confirm-modal-title" class="alert-title">Tem certeza?</h3>
+      <p id="confirm-modal-message" class="alert-message">
+        Tem certeza que deseja excluir esta obra do sistema?
+      </p>
+      <div style="display: flex; gap: 0.5rem; width: 100%;">
+        <button id="btn-confirm-cancel" class="btn btn-secondary" style="flex: 1;">Cancelar</button>
+        <button id="btn-confirm-ok" class="btn btn-danger" style="flex: 1;">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
   <!-- MODAL: ALERTAS CUSTOMIZADOS                -->
   <!-- ========================================== -->
   <div id="modal-alert-overlay" class="modal-overlay">
@@ -479,7 +513,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="./db.js?v=2"></script>
-  <script src="./app.js?v=2"></script>
+  <script src="./db.js?v=8"></script>
+  <script src="./app.js?v=8"></script>
 </body>
 </html>

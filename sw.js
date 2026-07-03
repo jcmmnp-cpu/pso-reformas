@@ -1,12 +1,14 @@
 // sw.js - Service Worker para P.S.O REFORMAS
-const CACHE_NAME = 'pso-reformas-cache-v2';
+const CACHE_NAME = 'pso-reformas-cache-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './index.css',
-  './app.js?v=2',
-  './db.js?v=2',
+  './app.js?v=8',
+  './db.js?v=8',
   './logo.png',
+  './psofd.png',
+  './pwa_icon.jpg',
   './manifest.json'
 ];
 

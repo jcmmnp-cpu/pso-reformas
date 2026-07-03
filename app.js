@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderClientesList();
   renderOrcamentosList();
   renderObrasList();
+  renderObrasConcluidasList();
   renderClientesDropdown();
   updateSyncCounters();
   
@@ -84,11 +85,16 @@ async function loadLocalData() {
     state.obras = await dbObras.getAll();
     
     // Ordena orçamentos pelo código descrescente
-    state.orcamentos.sort((a, b) => b.codigo.localeCompare(a.codigo));
+    state.orcamentos.sort((a, b) => (b.codigo || '').localeCompare(a.codigo || ''));
     // Ordena clientes por nome
-    state.clientes.sort((a, b) => a.nome.localeCompare(b.nome));
-    // Ordena obras pela data de atualização decrecente
-    state.obras.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    state.clientes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    
+    // Ordena obras de forma segura pela data de atualização decrescente
+    state.obras.sort((a, b) => {
+      const dateA = a.updatedAt || a.dataInicio || '';
+      const dateB = b.updatedAt || b.dataInicio || '';
+      return dateB.localeCompare(dateA);
+    });
   } catch (err) {
     console.error('Erro ao carregar dados locais:', err);
   }
@@ -221,6 +227,49 @@ function showCustomAlert(title, message, isSuccess = true) {
     closeBtn.removeEventListener('click', handleClose);
   };
   closeBtn.addEventListener('click', handleClose);
+}
+
+// Modal personalizado de confirmação (dois botões)
+function showCustomConfirm(title, message, confirmText, isDanger, onConfirm) {
+  const overlay = document.getElementById('modal-confirm-overlay');
+  const titleEl = document.getElementById('confirm-modal-title');
+  const messageEl = document.getElementById('confirm-modal-message');
+  const okBtn = document.getElementById('btn-confirm-ok');
+  const icon = document.getElementById('confirm-modal-icon');
+  
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+  okBtn.textContent = confirmText;
+  
+  if (isDanger) {
+    okBtn.className = 'btn btn-danger';
+    icon.className = 'alert-icon danger';
+    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#E74C3C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+  } else {
+    okBtn.className = 'btn btn-success';
+    icon.className = 'alert-icon success';
+    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0F3A5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle-2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`;
+  }
+  
+  overlay.classList.add('active');
+  
+  const cancelBtn = document.getElementById('btn-confirm-cancel');
+  
+  const handleOk = () => {
+    overlay.classList.remove('active');
+    okBtn.removeEventListener('click', handleOk);
+    cancelBtn.removeEventListener('click', handleCancel);
+    onConfirm();
+  };
+  
+  const handleCancel = () => {
+    overlay.classList.remove('active');
+    okBtn.removeEventListener('click', handleOk);
+    cancelBtn.removeEventListener('click', handleCancel);
+  };
+  
+  okBtn.addEventListener('click', handleOk);
+  cancelBtn.addEventListener('click', handleCancel);
 }
 
 // === CONTROLES DO CLIENTE ===
@@ -975,6 +1024,7 @@ function handleImportGeralFile(e) {
       renderClientesDropdown();
       renderOrcamentosList();
       renderObrasList();
+      renderObrasConcluidasList();
       updateSyncCounters();
     } else {
       showCustomAlert('Falha na Importação', `Erro: ${res.error}`, false);
@@ -1246,6 +1296,7 @@ async function handleSaveObra(e) {
     
     await loadLocalData();
     renderObrasList();
+    renderObrasConcluidasList();
     renderOrcamentosList(); // Atualiza botão no card do orçamento
     switchTab('obras');
   } catch (err) {
@@ -1309,6 +1360,7 @@ async function handleSavePagamento(e) {
 
     await loadLocalData();
     renderObrasList();
+    renderObrasConcluidasList();
   } catch (err) {
     console.error(err);
     showCustomAlert('Erro', 'Não foi possível registrar o pagamento.', false);
@@ -1341,18 +1393,25 @@ window.visualizarComprovante = (comprovanteBase64) => {
 };
 
 // Excluir/Encerrar obra
-window.deleteObraCard = async (id, codigo) => {
-  if (confirm(`Deseja realmente apagar/encerrar a obra do orçamento "${codigo}"?\n(Esta ação apaga apenas os dados locais do dispositivo)`)) {
-    try {
-      await dbObras.delete(id);
-      showCustomAlert('Excluída', 'A obra foi removida localmente.');
-      await loadLocalData();
-      renderObrasList();
-      renderOrcamentosList(); // Atualiza botão no card de orçamentos
-    } catch (err) {
-      console.error(err);
+window.deleteObraCard = (id, codigo) => {
+  showCustomConfirm(
+    'Tem certeza?',
+    'tem certeza que deseja excluir esta obra do sistema ?',
+    'Excluir',
+    true,
+    async () => {
+      try {
+        await dbObras.delete(id);
+        showCustomAlert('Excluída', 'A obra foi removida localmente.');
+        await loadLocalData();
+        renderObrasList();
+        renderObrasConcluidasList();
+        renderOrcamentosList(); // Atualiza botão no card de orçamentos
+      } catch (err) {
+        console.error(err);
+      }
     }
-  }
+  );
 };
 
 // Renderiza a lista de Obras em andamento
@@ -1360,7 +1419,9 @@ function renderObrasList() {
   const list = document.getElementById('obras-list');
   list.innerHTML = '';
 
-  if (state.obras.length === 0) {
+  const activeObras = state.obras.filter(o => o.status !== 'concluida');
+
+  if (activeObras.length === 0) {
     list.innerHTML = `
       <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">
         <p>Nenhuma obra em andamento no momento.</p>
@@ -1370,7 +1431,7 @@ function renderObrasList() {
     return;
   }
 
-  state.obras.forEach(obra => {
+  activeObras.forEach(obra => {
     // Busca os dados completos do cliente para os links rápidos
     const cliente = state.clientes.find(c => c.id === obra.clienteId);
     
@@ -1501,8 +1562,195 @@ E-mail: psoreformas@gmail.com
         </button>
       </div>
 
+      <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <button class="btn btn-success btn-sm" onclick="finalizarObraCard('${obra.id}')" style="flex: 1;">Finalizar Obra</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteObraCard('${obra.id}')" style="flex: 1;">Excluir Obra</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+// Injeta a função para finalizar obra
+window.finalizarObraCard = (id) => {
+  showCustomConfirm(
+    'Finalizar Obra',
+    'Deseja realmente marcar esta obra como concluída?',
+    'Finalizar',
+    false,
+    async () => {
+      try {
+        const obra = await dbObras.getById(id);
+        if (obra) {
+          obra.status = 'concluida';
+          // Define a data de término como o dia atual para fins de registro
+          obra.previsaoTermino = new Date().toISOString().slice(0, 10);
+          obra.updatedAt = new Date().toISOString();
+          obra.synced = false;
+          await dbObras.save(obra);
+          
+          showCustomAlert('Obra Finalizada!', 'A obra foi arquivada em Obras Concluídas com sucesso.');
+          
+          await loadLocalData();
+          renderObrasList();
+          renderObrasConcluidasList();
+          renderOrcamentosList();
+          switchTab('obras-concluidas');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  );
+};
+
+// Renderiza a lista de Obras concluídas
+function renderObrasConcluidasList() {
+  const list = document.getElementById('obras-concluidas-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const concluidas = state.obras.filter(o => o.status === 'concluida');
+
+  if (concluidas.length === 0) {
+    list.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">
+        <p>Nenhuma obra concluída no momento.</p>
+      </div>
+    `;
+    return;
+  }
+
+  concluidas.forEach(obra => {
+    const cliente = state.clientes.find(c => c.id === obra.clienteId);
+    
+    // Cálculo financeiro
+    const totalCombinado = obra.valorCombinado;
+    const entrada = obra.valorEntrada;
+    const somaPagamentos = (obra.pagamentos || []).reduce((acc, curr) => acc + curr.valor, 0);
+    const totalPago = entrada + somaPagamentos;
+    const valorRestante = totalCombinado - totalPago;
+
+    // Formatação de valores
+    const fCombinado = totalCombinado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fEntrada = entrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fRestante = valorRestante.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fTotalPago = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const dataInicioFmt = obra.dataInicio.split('-').reverse().join('/');
+    const dataTerminoFmt = obra.previsaoTermino.split('-').reverse().join('/');
+
+    // Geração dos botões de contato
+    let contactButtonsHtml = '';
+    if (cliente) {
+      const cleanPhone = (cliente.telefone || '').replace(/\D/g, '');
+      const whatsappUrl = cleanPhone 
+        ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(`Olá ${cliente.nome}, tudo bem? Aqui é a equipe da P.S.O Reformas sobre a conclusão da sua obra.`)}` 
+        : '#';
+      
+      const phoneUrl = cliente.telefone ? `tel:${cliente.telefone}` : '#';
+      
+      const emailSubject = encodeURIComponent(`Conclusão da Obra — P.S.O REFORMAS (${obra.codigoOrcamento})`);
+      const emailBody = encodeURIComponent(
+`Olá ${cliente.nome},
+
+Sua obra foi concluída com sucesso! Ficamos muito felizes em realizar este trabalho.
+
+---
+Atenciosamente,
+
+P.S.O REFORMAS — Soluções Criativas
+CNPJ: 39.589.383/0001-10
+Telefone: (51) 99398-4535
+E-mail: psoreformas@gmail.com
+`
+      );
+      const emailUrl = cliente.email ? `mailto:${cliente.email}?subject=${emailSubject}&body=${emailBody}` : '#';
+
+      contactButtonsHtml = `
+        <div class="client-actions">
+          ${cliente.telefone ? `<a href="${phoneUrl}" class="btn-contact phone" title="Ligar para o cliente"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Ligar</a>` : ''}
+          ${cleanPhone ? `<a href="${whatsappUrl}" target="_blank" class="btn-contact whatsapp" title="Enviar WhatsApp"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> WhatsApp</a>` : ''}
+          ${cliente.email ? `<a href="${emailUrl}" class="btn-contact email" title="Enviar e-mail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> E-mail</a>` : ''}
+        </div>
+      `;
+    } else {
+      contactButtonsHtml = `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-top:0.5rem;">Cliente não cadastrado ou excluído</div>`;
+    }
+
+    // Renderiza a lista de pagamentos adicionais
+    let paymentsListHtml = '';
+    if (obra.pagamentos && obra.pagamentos.length > 0) {
+      obra.pagamentos.forEach(pag => {
+        const fPagValor = pag.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const fPagData = pag.data.split('-').reverse().join('/');
+        let thumbHtml = `<span class="payment-no-receipt">—</span>`;
+        if (pag.comprovante) {
+          thumbHtml = `<img class="payment-receipt-thumb" src="${pag.comprovante}" onclick="visualizarComprovante('${pag.comprovante}')" title="Clique para ampliar o comprovante">`;
+        }
+        paymentsListHtml += `
+          <div class="payment-item">
+            <span>${fPagData} - <strong>${fPagValor}</strong></span>
+            ${thumbHtml}
+          </div>
+        `;
+      });
+    } else {
+      paymentsListHtml = `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; text-align:center; padding: 0.3rem;">Sem pagamentos adicionais</div>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderTop = '4px solid var(--success-color)';
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+        <h3 class="card-title" style="margin:0;">${obra.codigoOrcamento}</h3>
+        <span style="background-color:#E2F6EA; color:var(--success-color); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight:700;">CONCLUÍDA</span>
+      </div>
+      <div class="card-field">
+        <span class="card-label">Cliente:</span>
+        <span style="font-weight:600;">${obra.clienteNome}</span>
+      </div>
+      ${contactButtonsHtml}
+      
+      <div class="card-field" style="margin-top:0.8rem;">
+        <span class="card-label">Data de Início:</span>
+        <span>${dataInicioFmt}</span>
+      </div>
+      <div class="card-field">
+        <span class="card-label">Data Conclusão:</span>
+        <span>${dataTerminoFmt}</span>
+      </div>
+
+      <div style="margin-top:0.8rem; border-top:1px dashed var(--border-color); padding-top:0.6rem;">
+        <div class="card-field">
+          <span class="card-label">Valor Combinado:</span>
+          <span style="font-weight:600; color:var(--primary-color);">${fCombinado}</span>
+        </div>
+        <div class="card-field">
+          <span class="card-label">Entrada:</span>
+          <span>${fEntrada} (${obra.formaEntrada || 'Não informada'})</span>
+        </div>
+        <div class="card-field">
+          <span class="card-label">Total Pago:</span>
+          <span style="font-weight:600; color:var(--success-color);">${fTotalPago}</span>
+        </div>
+        <div class="card-field" style="font-size: 1.05rem; font-weight: 700; color: var(--danger-color);">
+          <span class="card-label">Valor Restante:</span>
+          <span>${fRestante}</span>
+        </div>
+      </div>
+
+      <!-- Histórico de Pagamentos -->
+      <div class="payments-container">
+        <div class="payment-history-title">Pagamentos Parciais/Totais</div>
+        <div class="payments-list">
+          ${paymentsListHtml}
+        </div>
+      </div>
+
       <div class="card-actions" style="margin-top: 1rem;">
-        <button class="btn btn-danger btn-sm" onclick="deleteObraCard('${obra.id}', '${obra.codigoOrcamento}')" style="width: 100%;">Encerrar/Excluir Obra</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteObraCard('${obra.id}')" style="width: 100%;">Excluir Registro</button>
       </div>
     `;
     list.appendChild(card);
