@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P.S.O REFORMAS - Soluções Criativas</title>
+  
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0F3A5F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="P.S.O Reformas">
+  <link rel="apple-touch-icon" href="./logo.png">
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="./index.css">
+</head>
+<body>
+
+  <!-- Layout Principal -->
+  <div class="app-container">
+    
+    <!-- Cabeçalho Superior -->
+    <header class="app-header">
+      <div class="logo-area">
+        <img class="logo-img" src="./logo.png" alt="Logo P.S.O REFORMAS">
+        <div>
+          <span class="brand-name">P.S.O REFORMAS</span>
+          <span class="brand-subname">soluções criativas</span>
+        </div>
+      </div>
+      
+      <div class="status-badge">
+        <div id="status-dot" class="status-dot offline"></div>
+        <span id="status-text">Detectando rede...</span>
+      </div>
+    </header>
+
+    <!-- Navegação por Abas (Sticky no topo) -->
+    <nav class="tab-navigation">
+      <button class="tab-btn active" data-tab="orcamentos">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Orçamentos
+      </button>
+      <button class="tab-btn" data-tab="clientes">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clientes
+      </button>
+      <button class="tab-btn" data-tab="obras">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0-.83-.83-.83-2.17 0-3L12 9"/><path d="M17.62 10.62c.7-.7.7-1.84 0-2.54l-2.2-2.2a1.8 1.8 0 0 0-2.54 0L10.3 8.46M12 9l3 3M16 3l5 5"/></svg>
+        Obras
+      </button>
+      <button class="tab-btn" data-tab="backups">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Backup & Sinc
+      </button>
+    </nav>
+
+    <!-- Área de Conteúdo -->
+    <main class="app-content">
+
+      <!-- ================= SEÇÃO ORÇAMENTOS ================= -->
+      <section id="view-orcamentos" class="view-section active">
+        <div class="section-header">
+          <h2 class="section-title">Orçamentos de Obra</h2>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="btn-backup-topo" class="btn btn-secondary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-cloud"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></svg>
+              Gerar Backup Orçamentário
+            </button>
+            <button id="btn-novo-orcamento" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Orçamento
+            </button>
+          </div>
+        </div>
+        
+        <div id="orcamentos-list" class="card-grid">
+          <!-- Inserido dinamicamente via JS -->
+        </div>
+      </section>
+
+      <!-- ================= SEÇÃO CLIENTES ================= -->
+      <section id="view-clientes" class="view-section">
+        <div class="section-header">
+          <h2 class="section-title">Clientes Registrados</h2>
+          <button id="btn-novo-cliente" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo Cliente
+          </button>
+        </div>
+        
+        <div id="clientes-list" class="card-grid">
+          <!-- Inserido dinamicamente via JS -->
+        </div>
+      </section>
+
+      <!-- ================= SEÇÃO OBRAS ================= -->
+      <section id="view-obras" class="view-section">
+        <div class="section-header">
+          <h2 class="section-title">Obras em Andamento</h2>
+        </div>
+        
+        <div id="obras-list" class="card-grid">
+          <!-- Inserido dinamicamente via JS -->
+        </div>
+      </section>
+
+      <!-- ================= SEÇÃO BACKUP & SINC ================= -->
+      <section id="view-backups" class="view-section">
+        <div class="section-header">
+          <h2 class="section-title">Sincronização & Backup</h2>
+        </div>
+
+        <!-- Bloco de Conexão com PocketBase -->
+        <div class="backup-section-box">
+          <h3 class="backup-card-title" style="display:flex; align-items:center; gap:0.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Servidor PocketBase Local (Porta 8070)
+          </h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">
+            Quando estiver conectado à rede local do seu computador, você pode enviar todos os novos dados registrados offline para o banco de dados central do servidor.
+          </p>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; background:var(--bg-color); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+            <div>
+              <div style="font-size:0.9rem;">Clientes pendentes: <strong id="pending-clientes-count">0</strong></div>
+              <div style="font-size:0.9rem;">Orçamentos pendentes: <strong id="pending-orcamentos-count">0</strong></div>
+            </div>
+            <button id="btn-sync-pocketbase" class="btn btn-accent">Sincronizar com PocketBase</button>
+          </div>
+        </div>
+
+        <!-- Bloco de Backups Locais (Memória Física) -->
+        <h2 class="section-title" style="margin-top:2rem; margin-bottom:1rem;">Backups Físicos no Dispositivo</h2>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom:1.5rem;">
+          Exporte backups dos seus dados como arquivos JSON em seu telefone/computador. Caso você limpe o cache do seu navegador ou formate o telefone, você pode restaurar tudo carregando estes arquivos de volta.
+        </p>
+
+        <div class="backup-grid" style="grid-template-columns: 1fr;">
+          <!-- Backup Geral do Sistema -->
+          <div class="backup-card" style="max-width: 600px; margin: 0 auto; width: 100%;">
+            <div class="backup-card-title">Backup Geral do Sistema</div>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Salva todos os clientes e orçamentos (incluindo fotos e registros) em um único arquivo unificado.</p>
+            <div style="display:flex; gap:0.5rem; margin-top:auto;">
+              <button id="btn-export-geral" class="btn btn-primary" style="flex:1;">Exportar Backup Completo</button>
+              <button id="btn-import-geral" class="btn btn-secondary" style="flex:1;">Importar Backup Completo</button>
+            </div>
+            <input type="file" id="input-file-geral" class="hidden-file-input" accept=".json">
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CLIENTE                             -->
+  <!-- ========================================== -->
+  <div id="modal-cliente-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="cliente-modal-title" class="modal-title">Novo Cliente</h3>
+        <button class="modal-close" onclick="closeModal('modal-cliente-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="form-cliente">
+        <input type="hidden" id="cliente-id">
+        
+        <div class="form-group">
+          <label class="form-label" for="cliente-nome">Nome do Cliente *</label>
+          <input type="text" id="cliente-nome" class="form-input" placeholder="Ex: Supermix" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cliente-cpf">CPF</label>
+            <input type="text" id="cliente-cpf" class="form-input" placeholder="Ex: 000.000.000-00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cliente-cnpj">CNPJ</label>
+            <input type="text" id="cliente-cnpj" class="form-input" placeholder="Ex: 00.000.000/0000-00">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cliente-telefone">Telefone</label>
+            <input type="text" id="cliente-telefone" class="form-input" placeholder="Ex: (51) 99999-9999">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cliente-email">E-mail</label>
+            <input type="email" id="cliente-email" class="form-input" placeholder="Ex: cliente@email.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cliente-endereco">Endereço (Rua, Av, etc.)</label>
+          <input type="text" id="cliente-endereco" class="form-input" placeholder="Ex: Av. Principal">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cliente-numero">Número</label>
+            <input type="text" id="cliente-numero" class="form-input" placeholder="Ex: 120">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cliente-complemento">Complemento</label>
+            <input type="text" id="cliente-complemento" class="form-input" placeholder="Ex: Casa, Apto 101">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cliente-bairro">Bairro</label>
+            <input type="text" id="cliente-bairro" class="form-input" placeholder="Ex: Centro">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cliente-cidade">Cidade</label>
+            <input type="text" id="cliente-cidade" class="form-input" placeholder="Ex: Porto Alegre">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-cliente-overlay')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ORÇAMENTO                           -->
+  <!-- ========================================== -->
+  <div id="modal-orcamento-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="orcamento-modal-title" class="modal-title">Novo Orçamento</h3>
+        <button class="modal-close" onclick="closeModal('modal-orcamento-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="form-orcamento">
+        <input type="hidden" id="orcamento-id">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="orcamento-codigo">Código do Orçamento *</label>
+            <input type="text" id="orcamento-codigo" class="form-input" style="font-weight: 700; color: var(--primary-color);" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="orcamento-data">Data *</label>
+            <input type="date" id="orcamento-data" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="budget-cliente">Destinatário (Cliente) *</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <select id="budget-cliente" class="form-input" required style="flex: 1;">
+              <option value="">-- Selecione o Cliente --</option>
+              <!-- Carregado via JS -->
+            </select>
+            <button type="button" id="btn-add-client-fast" class="btn btn-primary" style="padding: 0.75rem; border-radius: var(--radius-md); aspect-ratio: 1;" title="Cadastrar novo cliente">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Seção: Serviços a Executar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; margin-bottom:0.5rem;">
+          <h4 style="font-family:var(--font-title); font-weight:700; color:var(--primary-color);">Serviços a Executar</h4>
+          <button type="button" id="btn-add-service-row" class="btn btn-secondary btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar Linha
+          </button>
+        </div>
+        <div id="services-rows" class="dynamic-row-list">
+          <!-- Linhas inseridas dinamicamente via JS -->
+        </div>
+
+        <!-- Seção: Materiais -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; margin-bottom:0.5rem;">
+          <h4 style="font-family:var(--font-title); font-weight:700; color:var(--primary-color);">Materiais</h4>
+          <button type="button" id="btn-add-material-row" class="btn btn-secondary btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar Linha
+          </button>
+        </div>
+        <div id="materials-rows" class="dynamic-row-list">
+          <!-- Linhas inseridas dinamicamente via JS -->
+        </div>
+
+        <!-- Seção: Registro Fotográfico (Câmera / Arquivos) -->
+        <h4 style="font-family:var(--font-title); font-weight:700; color:var(--primary-color); margin-top:1.5rem; margin-bottom:0.5rem;">Registro Fotográfico</h4>
+        
+        <div id="photo-uploader" class="photo-uploader">
+          <svg class="photo-uploader-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div class="photo-uploader-text">Tirar Foto ou Anexar Imagens</div>
+          <div class="photo-uploader-sub">Suporta Câmera, Galeria ou Arquivos do Celular</div>
+        </div>
+        <input type="file" id="budget-photos-input" class="hidden-file-input" accept="image/*" multiple>
+
+        <!-- Grade de Pré-visualização de Fotos -->
+        <div id="photo-grid-preview" class="photo-grid-preview">
+          <!-- Previews renderizados aqui -->
+        </div>
+
+        <!-- Observações Gerais -->
+        <div class="form-group" style="margin-top: 1.5rem;">
+          <label class="form-label" for="orcamento-obs">Observações do Orçamento</label>
+          <textarea id="orcamento-obs" class="form-input" rows="3" placeholder="Ex: Formas de pagamento, prazo de início..."></textarea>
+        </div>
+
+        <!-- Valor Total -->
+        <div class="form-group">
+          <label class="form-label" for="orcamento-total">Valor Total do Orçamento (R$) *</label>
+          <input type="number" step="0.01" id="orcamento-total" class="form-input" style="font-size: 1.2rem; font-weight: 700; color: var(--primary-color);" placeholder="Ex: 42000.00" required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-orcamento-overlay')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Orçamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: INICIAR OBRA                        -->
+  <!-- ========================================== -->
+  <div id="modal-iniciar-obra-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Iniciar Obra</h3>
+        <button class="modal-close" onclick="closeModal('modal-iniciar-obra-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="form-iniciar-obra">
+        <input type="hidden" id="iniciar-obra-orcamento-id">
+        <input type="hidden" id="iniciar-obra-cliente-id">
+        <input type="hidden" id="iniciar-obra-cliente-nome">
+        <input type="hidden" id="iniciar-obra-codigo-orcamento">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="iniciar-obra-orcamento-cod">Orçamento</label>
+            <input type="text" id="iniciar-obra-orcamento-cod" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="iniciar-obra-cliente-display">Cliente</label>
+            <input type="text" id="iniciar-obra-cliente-display" class="form-input" readonly>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="iniciar-obra-data-inicio">Data de Início *</label>
+            <input type="date" id="iniciar-obra-data-inicio" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="iniciar-obra-data-termino">Previsão de Término *</label>
+            <input type="date" id="iniciar-obra-data-termino" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="iniciar-obra-valor-combinado">Valor Combinado (R$) *</label>
+          <input type="number" step="0.01" id="iniciar-obra-valor-combinado" class="form-input" placeholder="Digite o valor combinado da obra" required style="font-weight: 700; color: var(--primary-color);">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="iniciar-obra-valor-entrada">Valor de Entrada (R$)</label>
+            <input type="number" step="0.01" id="iniciar-obra-valor-entrada" class="form-input" placeholder="Ex: 5000.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="iniciar-obra-forma-entrada">Forma de Pagamento da Entrada</label>
+            <input type="text" id="iniciar-obra-forma-entrada" class="form-input" placeholder="Ex: Pix, Dinheiro, Cartão">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-iniciar-obra-overlay')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar Início de Obra</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: REGISTRAR PAGAMENTO                 -->
+  <!-- ========================================== -->
+  <div id="modal-pagamento-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Registrar Pagamento</h3>
+        <button class="modal-close" onclick="closeModal('modal-pagamento-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="form-pagamento">
+        <input type="hidden" id="pagamento-obra-id">
+        
+        <div class="form-group">
+          <label class="form-label" for="pagamento-valor">Valor do Pagamento (R$) *</label>
+          <input type="number" step="0.01" id="pagamento-valor" class="form-input" style="font-size: 1.2rem; font-weight: 700; color: var(--success-color);" placeholder="Ex: 1500.00" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="pagamento-data">Data do Pagamento *</label>
+          <input type="date" id="pagamento-data" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Comprovante de Pagamento</label>
+          <div id="pagamento-uploader" class="photo-uploader" style="padding: 1.5rem; margin-bottom: 0.5rem;">
+            <svg class="photo-uploader-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div id="pagamento-uploader-text" class="photo-uploader-text" style="font-size: 0.95rem;">Tirar Foto ou Anexar Comprovante</div>
+          </div>
+          <input type="file" id="pagamento-comprovante-input" class="hidden-file-input" accept="image/*">
+          <div id="pagamento-comprovante-preview" style="display:none; margin-top:1rem; text-align:center;">
+            <img id="img-comprovante-preview" src="" style="max-height: 150px; max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-color); object-fit: contain;">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pagamento-overlay')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Pagamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: VISUALIZAR COMPROVANTE              -->
+  <!-- ========================================== -->
+  <div id="modal-comprovante-overlay" class="modal-overlay">
+    <div class="modal-container" style="max-width: 500px; text-align: center;">
+      <div class="modal-header">
+        <h3 class="modal-title">Comprovante</h3>
+        <button class="modal-close" onclick="closeModal('modal-comprovante-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="margin-top: 1rem; display: flex; justify-content: center; align-items: center;">
+        <img id="img-comprovante-full" src="" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ALERTAS CUSTOMIZADOS                -->
+  <!-- ========================================== -->
+  <div id="modal-alert-overlay" class="modal-overlay">
+    <div class="modal-container modal-alert">
+      <div id="alert-modal-icon" class="alert-icon success">
+        <!-- Ícone SVG injetado dinamicamente -->
+      </div>
+      <h3 id="alert-modal-title" class="alert-title">Orçamento Salvo!</h3>
+      <p id="alert-modal-message" class="alert-message">
+        O arquivo de backup foi salvo em seus arquivos locais.
+      </p>
+      <button id="btn-close-alert" class="btn btn-primary" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- CONTAINER DE IMPRESSÃO (Oculto na tela)    -->
+  <!-- ========================================== -->
+  <div id="print-layout">
+    <!-- Estrutura de páginas compilada sob demanda pelo app.js e impressa via window.print() -->
+  </div>
+
+  <!-- Scripts -->
+  <script src="./db.js?v=2"></script>
+  <script src="./app.js?v=2"></script>
+</body>
+</html>

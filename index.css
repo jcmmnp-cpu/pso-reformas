@@ -1,0 +1,1147 @@
+/* index.css - P.S.O REFORMAS - Soluções Criativas */
+
+/* Importar fontes modernas */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary-color: #0F3A5F;
+  --primary-dark: #08253F;
+  --primary-light: #1A5485;
+  --accent-color: #F2A900;
+  --accent-hover: #D19200;
+  --accent-light: #FFF4D9;
+  
+  --bg-color: #F4F7F9;
+  --card-bg: #FFFFFF;
+  --text-main: #2C3E50;
+  --text-muted: #7F8C8D;
+  --border-color: #E2E8F0;
+  
+  --success-color: #2ECC71;
+  --danger-color: #E74C3C;
+  --warning-color: #F39C12;
+  
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 8px 16px rgba(15, 58, 95, 0.08);
+  --shadow-lg: 0 16px 32px rgba(15, 58, 95, 0.15);
+  
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-title: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* App Container Layout */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Navigation Header */
+.app-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.logo-img {
+  height: 48px;
+  width: auto;
+  border-radius: var(--radius-sm);
+  background-color: white;
+  padding: 2px;
+}
+
+.brand-name {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: 0.5px;
+}
+
+.brand-subname {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--accent-color);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* Sync status badge */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 50px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background-color: var(--success-color);
+  box-shadow: 0 0 8px var(--success-color);
+}
+
+.status-dot.offline {
+  background-color: var(--warning-color);
+  box-shadow: 0 0 8px var(--warning-color);
+}
+
+/* Main Layout Tabs */
+.tab-navigation {
+  background-color: var(--card-bg);
+  display: flex;
+  justify-content: space-around;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 80px;
+  z-index: 99;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 1rem 0.5rem;
+  background: none;
+  border: none;
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  border-bottom: 3px solid transparent;
+  transition: var(--transition);
+}
+
+.tab-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--text-muted);
+  transition: var(--transition);
+}
+
+.tab-btn.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--accent-color);
+}
+
+.tab-btn.active svg {
+  stroke: var(--primary-color);
+}
+
+/* Main Content Area */
+.app-content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.view-section {
+  display: none;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.view-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Page Headers */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-family: var(--font-title);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+/* Premium Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-accent {
+  background-color: var(--accent-color);
+  color: var(--primary-dark);
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-color);
+  border-color: var(--text-muted);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+.btn-icon-only {
+  padding: 0.5rem;
+  border-radius: 50%;
+}
+
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+/* Cards & Lists */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  padding: 1.25rem;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background-color: var(--primary-color);
+}
+
+.card.synced::before {
+  background-color: var(--success-color);
+}
+
+.card-title {
+  font-family: var(--font-title);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+}
+
+.card-field {
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.card-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.8rem;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+  color: var(--primary-color);
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-main);
+  background-color: var(--bg-color);
+  transition: var(--transition);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(15, 58, 95, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Modais Customizados (Centralizados na Tela) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 58, 95, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+#modal-cliente-overlay {
+  z-index: 1100;
+}
+
+#modal-alert-overlay {
+  z-index: 1200;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-container {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.18);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  padding: 1.5rem;
+}
+
+.modal-overlay.active .modal-container {
+  transform: scale(1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.modal-title {
+  font-family: var(--font-title);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.modal-close:hover {
+  background-color: var(--bg-color);
+}
+
+.modal-close svg {
+  stroke: var(--text-muted);
+  width: 24px;
+  height: 24px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+}
+
+/* Modais Especiais (Ex: Notificação de salvamento / Confirmação) */
+.modal-alert {
+  max-width: 400px;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+.modal-alert .alert-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.modal-alert .alert-icon.success {
+  background-color: var(--accent-light);
+  stroke: var(--primary-color);
+}
+
+.modal-alert .alert-title {
+  font-family: var(--font-title);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.modal-alert .alert-message {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Dynamic rows (Services/Materials) in budget creation */
+.dynamic-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.dynamic-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.dynamic-row input {
+  flex: 1;
+}
+
+/* Custom Image Upload & Capture Area */
+.photo-uploader {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  text-align: center;
+  background-color: var(--bg-color);
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: 1rem;
+}
+
+.photo-uploader:hover {
+  border-color: var(--primary-light);
+  background-color: var(--accent-light);
+}
+
+.photo-uploader-icon {
+  margin: 0 auto 0.5rem;
+  stroke: var(--primary-color);
+}
+
+.photo-uploader-text {
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--primary-color);
+}
+
+.photo-uploader-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.photo-grid-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.photo-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.photo-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: rgba(231, 76, 60, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.photo-delete-btn:hover {
+  background-color: rgb(231, 76, 60);
+  transform: scale(1.1);
+}
+
+/* Custom value display */
+.total-display-bar {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+}
+
+.total-display-value {
+  font-size: 1.4rem;
+  color: var(--accent-color);
+}
+
+/* Dashboard backup view styling */
+.backup-section-box {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.backup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .backup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.backup-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.2rem;
+  background-color: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.backup-card-title {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+}
+
+/* Input de arquivo invisivel */
+.hidden-file-input {
+  display: none;
+}
+
+
+/* ========================================== */
+/* ESTILO DE IMPRESSÃO (@media print)        */
+/* ========================================== */
+
+/* Elemento de Layout do PDF escondido na tela */
+#print-layout {
+  display: none;
+  background-color: white;
+  width: 100%;
+}
+
+@media print {
+  /* Oculta toda a aplicação */
+  body, html {
+    background-color: white !important;
+    color: black !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+  
+  .app-container, .modal-overlay {
+    display: none !important;
+  }
+  
+  /* Mostra apenas a área de impressão */
+  #print-layout {
+    display: block !important;
+  }
+  
+  /* Configuração da Página A4 sem margens padrão para permitir cabeçalho sangrado (edge-to-edge) */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  /* Evita quebras órfãs ou viúvas de parágrafos */
+  h1, h2, h3, h4, table, tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Estilização Geral do PDF */
+  .pdf-page {
+    position: relative;
+    width: 100%;
+    max-width: 210mm;
+    height: 100vh;
+    page-break-after: always;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    overflow: hidden;
+  }
+  
+  .pdf-page:last-child {
+    page-break-after: avoid;
+  }
+
+  /* Conteúdo da Página A4 (onde as margens são aplicadas) */
+  .pdf-content {
+    padding: 0 15mm;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    box-sizing: border-box;
+  }
+  
+  /* Cabeçalho do PDF - Fundo Azul Escuro de ponta a ponta */
+  .pdf-header {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    height: 25mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15mm;
+    margin-bottom: 5mm;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .pdf-logo-box {
+    background-color: white !important;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 18mm;
+    width: 18mm;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .pdf-logo-img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+  }
+  
+  .pdf-company-info {
+    text-align: right;
+    color: white !important;
+    line-height: 1.4;
+  }
+  
+  .pdf-company-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13pt;
+    font-weight: 800;
+    color: white !important;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .pdf-company-subtitle {
+    font-size: 8.5pt;
+    color: #e2e8f0 !important;
+  }
+
+  .pdf-company-budget {
+    font-size: 9pt;
+    font-weight: 700;
+    color: white !important;
+    margin-top: 3px;
+  }
+  
+  /* Títulos de Seções - Fundo Azul Escuro */
+  .pdf-section-title {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    font-family: 'Outfit', sans-serif;
+    font-size: 9pt;
+    font-weight: 700;
+    padding: 4px 10px;
+    margin-top: 5mm;
+    margin-bottom: 4px; /* Espaço para destacar o arredondamento */
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Tabela de Dados do Cliente */
+  .pdf-client-grid {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    row-gap: 4px;
+    column-gap: 15px;
+    font-size: 8.5pt;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px; /* Arredondado nas 4 pontas */
+    margin-bottom: 5mm;
+    background-color: white;
+  }
+  
+  .pdf-client-label {
+    font-weight: 700;
+    color: var(--primary-color) !important;
+  }
+  
+  .pdf-client-value {
+    color: #1a202c;
+  }
+  
+  /* Tabelas */
+  .pdf-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 5mm;
+    font-size: 8pt;
+  }
+  
+  .pdf-table th {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    font-weight: 700;
+    text-align: left;
+    padding: 4px 10px;
+    font-size: 8.5pt;
+    border: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .pdf-table td {
+    padding: 4px 10px;
+    border-bottom: 1px solid #E2E8F0;
+    color: #2d3748;
+  }
+  
+  .pdf-table tr:last-child td {
+    border-bottom: none; /* Remove borda dupla no final da tabela */
+  }
+  
+  .pdf-table tr:nth-child(even) {
+    background-color: #F8FAFC !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .pdf-table th.col-num {
+    width: 40px;
+    text-align: center;
+  }
+  
+  .pdf-table td.col-num {
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-color) !important;
+  }
+  
+  .pdf-table th.col-desc {
+    width: 75%;
+  }
+  
+  /* Seção de Observações */
+  .pdf-obs-box {
+    font-size: 8pt;
+    color: #2d3748;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px; /* Arredondado */
+    line-height: 1.4;
+    background-color: white;
+  }
+  
+  /* Grid de Imagens - Página 2 */
+  .pdf-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 4mm;
+    margin-bottom: 8mm;
+  }
+  
+  .pdf-photo-item {
+    aspect-ratio: 4/3;
+    border: 1px solid #CBD5E1;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #F8FAFC;
+  }
+  
+  .pdf-photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* Valor Total do Orçamento */
+  .pdf-total-bar {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    padding: 6px 12px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 9.5pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5mm;
+    margin-bottom: 20mm;
+    text-transform: uppercase;
+    border-radius: 4px; /* Arredondado */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .pdf-total-value {
+    font-size: 12pt;
+    color: white !important;
+  }
+  
+  /* Assinaturas */
+  .pdf-signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto; /* Empurra para o rodapé antes do footer final */
+    margin-bottom: 25mm;
+    padding: 0 20px;
+  }
+  
+  .pdf-sig-line {
+    width: 42%;
+    text-align: center;
+    font-size: 8.5pt;
+    color: #4a5568;
+    border-top: 1px solid #718096;
+    padding-top: 6px;
+  }
+  
+  /* Rodapé Fixo no final de cada página */
+  .pdf-footer {
+    position: absolute;
+    bottom: 8mm;
+    left: 15mm;
+    right: 15mm;
+    border-top: 1px solid #E2E8F0;
+    padding-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 7.5pt;
+    color: #718096;
+    box-sizing: border-box;
+  }
+}
+
+/* Custom Scrollbars (Personalização da barra de rolagem lateral) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Estilos para botões de atalho rápido de comunicação (Contatos) */
+.client-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-contact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  color: white !important;
+  font-family: var(--font-title);
+  gap: 0.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-contact svg {
+  width: 14px;
+  height: 14px;
+  stroke: white;
+  fill: none;
+}
+
+.btn-contact.phone {
+  background-color: #3498db;
+}
+.btn-contact.phone:hover {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+}
+
+.btn-contact.whatsapp {
+  background-color: #2ecc71;
+}
+.btn-contact.whatsapp:hover {
+  background-color: #27ae60;
+  transform: translateY(-1px);
+}
+
+.btn-contact.email {
+  background-color: #e74c3c;
+}
+.btn-contact.email:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}
+
+/* Área de Pagamentos e Comprovantes */
+.payments-container {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.8rem;
+}
+
+.payment-history-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.payments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: 0.8rem;
+  padding-right: 0.2rem;
+}
+
+.payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  background-color: var(--bg-color);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.payment-receipt-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: transform 0.2s;
+  background-color: white;
+}
+
+.payment-receipt-thumb:hover {
+  transform: scale(1.1);
+}
+
+.payment-no-receipt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Custom Overrides para z-indices de overlays de modais aninhados */
+#modal-iniciar-obra-overlay {
+  z-index: 1050;
+}
+
+#modal-pagamento-overlay {
+  z-index: 1150;
+}
+
+#modal-comprovante-overlay {
+  z-index: 1300;
+}
