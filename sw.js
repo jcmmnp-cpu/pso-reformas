@@ -1,15 +1,15 @@
 // sw.js - Service Worker para P.S.O REFORMAS
-const CACHE_NAME = 'pso-reformas-cache-v12';
+const CACHE_NAME = 'pso-reformas-cache-v13';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './index.css',
-  './app.js?v=12',
-  './db.js?v=12',
+  './app.js?v=13',
+  './db.js?v=13',
   './logo.png',
   './psofd.png',
   './pwa_icon.jpg',
-  './manifest.json?v=12'
+  './manifest.json?v=13'
 ];
 
 // Instalação do Service Worker e Cache dos arquivos

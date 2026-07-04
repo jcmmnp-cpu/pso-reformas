@@ -30,7 +30,7 @@
   </script>
   
   <!-- PWA Manifest & Icons -->
-  <link rel="manifest" href="./manifest.json?v=12">
+  <link rel="manifest" href="./manifest.json?v=13">
   <meta name="theme-color" content="#0F3A5F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -45,6 +45,26 @@
   <!-- Layout Principal -->
   <div class="app-container">
     
+    <!-- Menu de Navegação Mobile (Hamburguer Overlay) -->
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay" onclick="if(event.target === this) toggleMobileNav(false)">
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-header">
+          <span class="mobile-nav-title">Menu de Navegação</span>
+          <button class="mobile-nav-close" onclick="toggleMobileNav(false)" aria-label="Fechar Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="mobile-nav-links">
+          <button class="mobile-nav-link active" onclick="switchTabMobile('orcamentos')">Orçamentos</button>
+          <button class="mobile-nav-link" onclick="switchTabMobile('clientes')">Clientes</button>
+          <button class="mobile-nav-link" onclick="switchTabMobile('obras')">Obras em Andamento</button>
+          <button class="mobile-nav-link" onclick="switchTabMobile('obras-concluidas')">Obras Concluídas</button>
+          <button class="mobile-nav-link" onclick="switchTabMobile('financeiro')">Financeiro & Caixa</button>
+          <button class="mobile-nav-link" onclick="switchTabMobile('backups')">Backup & Sinc</button>
+        </div>
+      </div>
+    </div>
+    
     <!-- Cabeçalho Superior -->
     <header class="app-header">
       <div class="logo-area">
@@ -55,9 +75,16 @@
         </div>
       </div>
       
-      <div class="status-badge">
-        <div id="status-dot" class="status-dot offline"></div>
-        <span id="status-text">Detectando rede...</span>
+      <div style="display: flex; align-items: center; gap: 0.8rem;">
+        <div class="status-badge">
+          <div id="status-dot" class="status-dot offline"></div>
+          <span id="status-text">Detectando rede...</span>
+        </div>
+        
+        <!-- Botão Menu Hamburguer (Mobile) -->
+        <button id="btn-hamburger" class="btn-hamburger" onclick="toggleMobileNav(true)" aria-label="Abrir Menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        </button>
       </div>
     </header>
 
@@ -865,7 +892,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="./db.js?v=12"></script>
-  <script src="./app.js?v=12"></script>
+  <script src="./db.js?v=13"></script>
+  <script src="./app.js?v=13"></script>
 </body>
 </html>

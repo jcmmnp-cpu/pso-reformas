@@ -138,6 +138,24 @@ function switchTab(tabId) {
     btn.classList.toggle('active', btn.dataset.tab === tabId);
   });
   
+  // Atualiza classes no menu mobile também
+  document.querySelectorAll('.mobile-nav-link').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  const mobileMap = {
+    'orcamentos': 0,
+    'clientes': 1,
+    'obras': 2,
+    'obras-concluidas': 3,
+    'financeiro': 4,
+    'backups': 5
+  };
+  const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+  const targetIdx = mobileMap[tabId];
+  if (targetIdx !== undefined && mobileLinks[targetIdx]) {
+    mobileLinks[targetIdx].classList.add('active');
+  }
+
   // Atualiza views
   document.querySelectorAll('.view-section').forEach(section => {
     section.classList.toggle('active', section.id === `view-${tabId}`);
@@ -2632,5 +2650,23 @@ window.deleteExtraObra = (obraId, extraId) => {
       }
     }
   );
+};
+
+window.toggleMobileNav = (open) => {
+  const overlay = document.getElementById('mobile-nav-overlay');
+  if (overlay) {
+    if (open) {
+      overlay.classList.add('active');
+    } else {
+      overlay.classList.remove('active');
+    }
+  }
+};
+
+window.switchTabMobile = (tabId) => {
+  // Converte a chave da aba de obras concluídas para o id interno
+  const resolvedTab = tabId === 'obras-concluidas' ? 'obras-concluidas' : tabId;
+  switchTab(resolvedTab);
+  toggleMobileNav(false);
 };
 
