@@ -30,7 +30,7 @@
   </script>
   
   <!-- PWA Manifest & Icons -->
-  <link rel="manifest" href="./manifest.json?v=13">
+  <link rel="manifest" href="./manifest.json?v=16">
   <meta name="theme-color" content="#0F3A5F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -179,21 +179,34 @@
 
       <!-- ================= SEÇÃO FINANCEIRO ================= -->
       <section id="view-financeiro" class="view-section">
-        <div class="section-header">
-          <h2 class="section-title">Financeiro & Caixa</h2>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1rem;">
+          <h2 class="section-title">Entradas & Saídas</h2>
+          
+          <!-- Filtro de Período / Mês -->
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="filter-financeiro-periodo" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Filtrar por Mês:</label>
+            <select id="filter-financeiro-periodo" class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color); width: auto;">
+              <option value="todos">Todo o Período</option>
+            </select>
+          </div>
         </div>
 
         <!-- Dashboard Financeiro -->
         <div class="metrics-grid">
           <div class="metric-card">
-            <span class="metric-title">Saldo Geral em Caixa</span>
-            <span id="fin-saldo-caixa" class="metric-value">R$ 0,00</span>
-            <span class="metric-subtitle">Entradas - Despesas - Investimentos</span>
+            <span class="metric-title">Total Contratado</span>
+            <span id="fin-total-contratado" class="metric-value" style="color:var(--primary-color);">R$ 0,00</span>
+            <span class="metric-subtitle">Valor total das obras (Base + Extras)</span>
           </div>
           <div class="metric-card">
             <span class="metric-title">Total Recebido (Entradas)</span>
             <span id="fin-total-entradas" class="metric-value text-success">R$ 0,00</span>
             <span class="metric-subtitle">Faturamento bruto das obras</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">A Receber</span>
+            <span id="fin-total-areceber" class="metric-value text-danger">R$ 0,00</span>
+            <span class="metric-subtitle">Saldo devedor das obras</span>
           </div>
           <div class="metric-card">
             <span class="metric-title">Total Pago (Despesas)</span>
@@ -204,6 +217,11 @@
             <span class="metric-title">Total Investido</span>
             <span id="fin-total-investimentos" class="metric-value" style="color:var(--primary-color);">R$ 0,00</span>
             <span class="metric-subtitle">Equipamentos e melhorias</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">Saldo Líquido</span>
+            <span id="fin-saldo-caixa" class="metric-value">R$ 0,00</span>
+            <span class="metric-subtitle">Recebido - Despesas - Investimentos</span>
           </div>
         </div>
 
@@ -892,7 +910,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="./db.js?v=13"></script>
-  <script src="./app.js?v=13"></script>
+  <script src="./db.js?v=16"></script>
+  <script src="./app.js?v=16"></script>
 </body>
 </html>

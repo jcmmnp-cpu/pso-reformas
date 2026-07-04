@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderObrasList();
   renderObrasConcluidasList();
   renderClientesDropdown();
+  populateFinanceiroPeriodoFilter();
   renderFinanceiroDashboard();
   renderExtratoTable();
   renderGastosAvulsosList();
@@ -253,6 +254,12 @@ function setupEventListeners() {
 
   // Filtro do Extrato Geral
   addListenerIfExists('filter-extrato-tipo', 'change', () => {
+    renderExtratoTable();
+  });
+
+  // Filtro de Período do Financeiro Geral
+  addListenerIfExists('filter-financeiro-periodo', 'change', () => {
+    renderFinanceiroDashboard();
     renderExtratoTable();
   });
 
@@ -479,20 +486,25 @@ async function handleSaveCliente(e) {
   }
 }
 
-async function deleteCliente(id, nome) {
-  // Confirmador customizado simples
-  if (confirm(`Deseja realmente excluir o cliente "${nome}"?\n(Esta ação apaga apenas os dados locais do dispositivo)`)) {
-    try {
-      await dbClientes.delete(id);
-      showCustomAlert('Excluído', `Cliente "${nome}" removido localmente.`);
-      await loadLocalData();
-      renderClientesList();
-      renderClientesDropdown();
-      updateSyncCounters();
-    } catch (err) {
-      console.error(err);
+function deleteCliente(id, nome) {
+  showCustomConfirm(
+    'Excluir Cliente?',
+    `Tem certeza que deseja excluir o cliente "${nome}"? (Esta ação apaga apenas os dados locais do dispositivo)`,
+    'Excluir',
+    true,
+    async () => {
+      try {
+        await dbClientes.delete(id);
+        showCustomAlert('Excluído', `Cliente "${nome}" removido localmente.`);
+        await loadLocalData();
+        renderClientesList();
+        renderClientesDropdown();
+        updateSyncCounters();
+      } catch (err) {
+        console.error(err);
+      }
     }
-  }
+  );
 }
 
 function renderClientesList() {
@@ -801,18 +813,24 @@ async function handleSaveOrcamento(e) {
   }
 }
 
-async function deleteOrcamento(id, codigo) {
-  if (confirm(`Deseja realmente apagar o orçamento "${codigo}" localmente?`)) {
-    try {
-      await dbOrcamentos.delete(id);
-      showCustomAlert('Excluído', `Orçamento "${codigo}" apagado localmente.`);
-      await loadLocalData();
-      renderOrcamentosList();
-      updateSyncCounters();
-    } catch (err) {
-      console.error(err);
+function deleteOrcamento(id, codigo) {
+  showCustomConfirm(
+    'Excluir Orçamento?',
+    `Tem certeza que deseja apagar o orçamento "${codigo}" do sistema local?`,
+    'Excluir',
+    true,
+    async () => {
+      try {
+        await dbOrcamentos.delete(id);
+        showCustomAlert('Excluído', `Orçamento "${codigo}" apagado localmente.`);
+        await loadLocalData();
+        renderOrcamentosList();
+        updateSyncCounters();
+      } catch (err) {
+        console.error(err);
+      }
     }
-  }
+  );
 }
 
 // Renderiza a lista de Orçamentos cadastrados
@@ -1160,6 +1178,7 @@ function handleImportGeralFile(e) {
       renderOrcamentosList();
       renderObrasList();
       renderObrasConcluidasList();
+      populateFinanceiroPeriodoFilter();
       renderFinanceiroDashboard();
       renderExtratoTable();
       renderGastosAvulsosList();
@@ -1550,6 +1569,10 @@ window.deleteObraCard = (id, codigo) => {
         renderObrasList();
         renderObrasConcluidasList();
         renderOrcamentosList(); // Atualiza botão no card de orçamentos
+        populateFinanceiroPeriodoFilter(); // Atualiza os meses disponíveis no filtro
+        renderFinanceiroDashboard(); // Atualiza os blocos de métricas financeiras
+        renderExtratoTable(); // Atualiza o extrato de transações
+        updateSyncCounters();
       } catch (err) {
         console.error(err);
       }
@@ -1746,6 +1769,10 @@ window.finalizarObraCard = (id) => {
           renderObrasList();
           renderObrasConcluidasList();
           renderOrcamentosList();
+          populateFinanceiroPeriodoFilter(); // Atualiza os meses disponíveis no filtro
+          renderFinanceiroDashboard(); // Atualiza os blocos de métricas financeiras
+          renderExtratoTable(); // Atualiza o extrato de transações
+          updateSyncCounters();
           switchTab('obras-concluidas');
         }
       } catch (err) {
@@ -1978,30 +2005,71 @@ function getGastoAvulsoLabel(tipo) {
 
 // 1. Dashboard de Caixa Geral
 function renderFinanceiroDashboard() {
+  const periodFilterEl = document.getElementById('filter-financeiro-periodo');
+  const selectedPeriod = periodFilterEl ? periodFilterEl.value : 'todos';
+
+  const matchesPeriod = (dateStr) => {
+    if (selectedPeriod === 'todos') return true;
+    if (!dateStr) return false;
+    return dateStr.startsWith(selectedPeriod);
+  };
+
+  let totalContratado = 0;
   let totalEntradas = 0;
+  let totalAReceber = 0;
   let totalDespesas = 0;
   let totalInvestimentos = 0;
 
-  // Entradas das Obras (Entradas + Pagamentos parciais)
+  // Obras
   state.obras.forEach(obra => {
-    totalEntradas += obra.valorEntrada || 0;
-    if (obra.pagamentos) {
-      obra.pagamentos.forEach(p => totalEntradas += p.valor);
+    // Total contratado desta obra (Base + Extras)
+    const totalExtras = (obra.valoresExtras || []).reduce((acc, curr) => acc + curr.valor, 0);
+    const totalContrato = obra.valorCombinado + totalExtras;
+    const totalPagoObra = (obra.valorEntrada || 0) + (obra.pagamentos || []).reduce((acc, curr) => acc + curr.valor, 0);
+    const restante = totalContrato - totalPagoObra;
+
+    // Se a obra começou no período selecionado
+    if (matchesPeriod(obra.dataInicio)) {
+      totalContratado += totalContrato;
+      if (restante > 0) {
+        totalAReceber += restante;
+      }
     }
-    // Despesas de cada obra
+
+    // Entradas da obra (Entrada + Pagamentos)
+    if (matchesPeriod(obra.dataInicio)) {
+      totalEntradas += obra.valorEntrada || 0;
+    }
+    if (obra.pagamentos) {
+      obra.pagamentos.forEach(p => {
+        if (matchesPeriod(p.data)) {
+          totalEntradas += p.valor;
+        }
+      });
+    }
+
+    // Despesas da obra
     if (obra.despesas) {
-      obra.despesas.forEach(d => totalDespesas += d.valor);
+      obra.despesas.forEach(d => {
+        if (matchesPeriod(d.data)) {
+          totalDespesas += d.valor;
+        }
+      });
     }
   });
 
   // Despesas Avulsas/Pessoais
   state.despesasAvulsas.forEach(d => {
-    totalDespesas += d.valor;
+    if (matchesPeriod(d.data)) {
+      totalDespesas += d.valor;
+    }
   });
 
   // Investimentos
   state.investimentos.forEach(i => {
-    totalInvestimentos += i.valor;
+    if (matchesPeriod(i.data)) {
+      totalInvestimentos += i.valor;
+    }
   });
 
   const saldoCaixa = totalEntradas - totalDespesas - totalInvestimentos;
@@ -2011,11 +2079,15 @@ function renderFinanceiroDashboard() {
   const elEntradas = document.getElementById('fin-total-entradas');
   const elDespesas = document.getElementById('fin-total-despesas');
   const elInvestimentos = document.getElementById('fin-total-investimentos');
+  const elContratado = document.getElementById('fin-total-contratado');
+  const elAReceber = document.getElementById('fin-total-areceber');
 
   if (elSaldo) elSaldo.textContent = saldoCaixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   if (elEntradas) elEntradas.textContent = totalEntradas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   if (elDespesas) elDespesas.textContent = totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   if (elInvestimentos) elInvestimentos.textContent = totalInvestimentos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  if (elContratado) elContratado.textContent = totalContratado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  if (elAReceber) elAReceber.textContent = totalAReceber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 // 2. Extrato Geral (Fluxo de Caixa)
@@ -2101,9 +2173,16 @@ function renderExtratoTable() {
   // Ordena por data decrescente
   transacoes.sort((a, b) => b.data.localeCompare(a.data));
 
-  // Filtra
+  // Filtra por tipo
   if (filterTipo !== 'todos') {
     transacoes = transacoes.filter(t => t.tipo === filterTipo);
+  }
+
+  // Filtra por período (Mês/Ano)
+  const periodFilterEl = document.getElementById('filter-financeiro-periodo');
+  const selectedPeriod = periodFilterEl ? periodFilterEl.value : 'todos';
+  if (selectedPeriod !== 'todos') {
+    transacoes = transacoes.filter(t => t.data && t.data.startsWith(selectedPeriod));
   }
 
   if (transacoes.length === 0) {
@@ -2669,4 +2748,51 @@ window.switchTabMobile = (tabId) => {
   switchTab(resolvedTab);
   toggleMobileNav(false);
 };
+
+// Coleta datas de transações e preenche o dropdown de filtro financeiro dinamicamente
+function populateFinanceiroPeriodoFilter() {
+  const select = document.getElementById('filter-financeiro-periodo');
+  if (!select) return;
+
+  const currentSelected = select.value || 'todos';
+  select.innerHTML = '<option value="todos">Todo o Período</option>';
+
+  const meses = new Set();
+  const addDate = (dateStr) => {
+    if (dateStr && dateStr.length >= 7) {
+      meses.add(dateStr.substring(0, 7)); // YYYY-MM
+    }
+  };
+
+  state.obras.forEach(obra => {
+    addDate(obra.dataInicio);
+    if (obra.pagamentos) {
+      obra.pagamentos.forEach(p => addDate(p.data));
+    }
+    if (obra.despesas) {
+      obra.despesas.forEach(d => addDate(d.data));
+    }
+  });
+
+  state.despesasAvulsas.forEach(d => addDate(d.data));
+  state.investimentos.forEach(i => addDate(i.data));
+
+  const mesesOrdenados = Array.from(meses).sort((a, b) => b.localeCompare(a));
+  const nomesMeses = {
+    '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+    '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+    '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+  };
+
+  mesesOrdenados.forEach(mesStr => {
+    const [ano, mes] = mesStr.split('-');
+    const nomeMes = nomesMeses[mes] || mes;
+    const option = document.createElement('option');
+    option.value = mesStr;
+    option.textContent = `${nomeMes} de ${ano}`;
+    select.appendChild(option);
+  });
+
+  select.value = currentSelected;
+}
 
