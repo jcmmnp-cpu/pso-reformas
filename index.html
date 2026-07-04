@@ -5,13 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>P.S.O REFORMAS - Soluções Criativas</title>
   
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      var statusText = document.getElementById('status-text');
+      if (statusText) {
+        statusText.style.color = '#E74C3C';
+        statusText.style.display = 'inline-block';
+        statusText.textContent = 'Erro: ' + message + ' (L' + lineno + ')';
+      }
+      return false;
+    };
+
+    // Atalho para desativar e desregistrar Service Worker corrompido
+    if (window.location.search.includes('nosw=true')) {
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].unregister();
+          }
+          window.location.href = window.location.pathname;
+        });
+      }
+    }
+  </script>
+  
   <!-- PWA Manifest & Icons -->
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="./manifest.json?v=12">
   <meta name="theme-color" content="#0F3A5F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="P.S.O Reformas">
-  <link rel="apple-touch-icon" href="./logo.png">
+  <link rel="apple-touch-icon" href="./pwa_icon.jpg">
 
   <!-- Estilos -->
   <link rel="stylesheet" href="./index.css">
@@ -54,6 +78,10 @@
       <button class="tab-btn" data-tab="obras-concluidas">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-square"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Concluídas
+      </button>
+      <button class="tab-btn" data-tab="financeiro">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Financeiro
       </button>
       <button class="tab-btn" data-tab="backups">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -122,6 +150,106 @@
         </div>
       </section>
 
+      <!-- ================= SEÇÃO FINANCEIRO ================= -->
+      <section id="view-financeiro" class="view-section">
+        <div class="section-header">
+          <h2 class="section-title">Financeiro & Caixa</h2>
+        </div>
+
+        <!-- Dashboard Financeiro -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-title">Saldo Geral em Caixa</span>
+            <span id="fin-saldo-caixa" class="metric-value">R$ 0,00</span>
+            <span class="metric-subtitle">Entradas - Despesas - Investimentos</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">Total Recebido (Entradas)</span>
+            <span id="fin-total-entradas" class="metric-value text-success">R$ 0,00</span>
+            <span class="metric-subtitle">Faturamento bruto das obras</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">Total Pago (Despesas)</span>
+            <span id="fin-total-despesas" class="metric-value text-danger">R$ 0,00</span>
+            <span class="metric-subtitle">Custos operacionais (Obras + Avulsos)</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">Total Investido</span>
+            <span id="fin-total-investimentos" class="metric-value" style="color:var(--primary-color);">R$ 0,00</span>
+            <span class="metric-subtitle">Equipamentos e melhorias</span>
+          </div>
+        </div>
+
+        <!-- Sub-navegação do Financeiro -->
+        <div class="subtab-navigation" style="margin-top: 2rem; display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+          <button class="subtab-btn active" data-subtab="extrato">Extrato Geral</button>
+          <button class="subtab-btn" data-subtab="gastos-avulsos">Gastos Pessoais & Avulsos</button>
+          <button class="subtab-btn" data-subtab="investimentos">Investimentos da Empresa</button>
+        </div>
+
+        <!-- Sub-view: Extrato Geral -->
+        <div id="subview-extrato" class="subview-section active">
+          <div class="card" style="padding: 1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+              <h3 style="font-family: var(--font-title); color: var(--primary-color);">Histórico de Transações</h3>
+              <div style="display: flex; gap: 0.5rem;">
+                <select id="filter-extrato-tipo" class="form-control" style="padding: 0.3rem 0.5rem; font-size: 0.85rem; width: auto;">
+                  <option value="todos">Todos os tipos</option>
+                  <option value="entrada">Entradas (Recebimentos)</option>
+                  <option value="saida">Saídas (Despesas / Pagos)</option>
+                  <option value="investimento">Investimentos</option>
+                </select>
+              </div>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="extrato-table" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-muted);">
+                    <th style="padding: 0.75rem 0.5rem;">Data</th>
+                    <th style="padding: 0.75rem 0.5rem;">Tipo</th>
+                    <th style="padding: 0.75rem 0.5rem;">Origem/Obra</th>
+                    <th style="padding: 0.75rem 0.5rem;">Descrição</th>
+                    <th style="padding: 0.75rem 0.5rem; text-align: right;">Valor</th>
+                    <th style="padding: 0.75rem 0.5rem; text-align: center;">Nota</th>
+                  </tr>
+                </thead>
+                <tbody id="extrato-tbody">
+                  <!-- Injetado dinamicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-view: Gastos Pessoais & Avulsos -->
+        <div id="subview-gastos-avulsos" class="subview-section">
+          <div class="section-header" style="margin-bottom: 1rem;">
+            <h3 style="font-family: var(--font-title); color: var(--primary-color); font-size: 1.2rem;">Lançamentos Avulsos</h3>
+            <button id="btn-novo-gasto-avulso" class="btn btn-primary btn-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Gasto Avulso
+            </button>
+          </div>
+          <div id="gastos-avulsos-list" class="card-grid">
+            <!-- Injetado dinamicamente -->
+          </div>
+        </div>
+
+        <!-- Sub-view: Investimentos -->
+        <div id="subview-investimentos" class="subview-section">
+          <div class="section-header" style="margin-bottom: 1rem;">
+            <h3 style="font-family: var(--font-title); color: var(--primary-color); font-size: 1.2rem;">Investimentos da Empresa</h3>
+            <button id="btn-novo-investimento" class="btn btn-primary btn-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Investimento
+            </button>
+          </div>
+          <div id="investimentos-grid" class="card-grid">
+            <!-- Injetado dinamicamente -->
+          </div>
+        </div>
+      </section>
+
       <!-- ================= SEÇÃO BACKUP & SINC ================= -->
       <section id="view-backups" class="view-section">
         <div class="section-header">
@@ -132,7 +260,7 @@
         <div class="backup-section-box">
           <h3 class="backup-card-title" style="display:flex; align-items:center; gap:0.5rem;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            Servidor PocketBase Local (Porta 8070)
+            Servidor Local
           </h3>
           <p style="font-size: 0.9rem; color: var(--text-muted);">
             Quando estiver conectado à rede local do seu computador, você pode enviar todos os novos dados registrados offline para o banco de dados central do servidor.
@@ -506,6 +634,230 @@
   </div>
 
   <!-- ========================================== -->
+  <!-- MODAL: FINANCEIRO DA OBRA (EXTRAS/DESPESAS)-->
+  <!-- ========================================== -->
+  <div id="modal-financeiro-obra-overlay" class="modal-overlay">
+    <div class="modal-container" style="max-width: 750px; width: 95%; max-height: 90vh;">
+      <div class="modal-header" style="padding: 1rem;">
+        <h2 id="fin-obra-titulo" class="modal-title" style="font-size: 1.25rem;">Financeiro da Obra</h2>
+        <button class="modal-close" onclick="closeModal('modal-financeiro-obra-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding: 1rem; overflow-y: auto;">
+        <!-- ID da obra oculto -->
+        <input type="hidden" id="fin-obra-id">
+
+        <!-- Quadro resumo financeiro da obra -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-bottom: 1.2rem;">
+          <div class="metric-card" style="padding: 0.6rem 0.8rem; border-radius: 6px;">
+            <span class="metric-title" style="font-size: 0.75rem;">Total Contrato</span>
+            <span id="fin-obra-total-contrato" style="font-size: 1.15rem; font-weight:700; color:var(--primary-color);">R$ 0,00</span>
+          </div>
+          <div class="metric-card" style="padding: 0.6rem 0.8rem; border-radius: 6px;">
+            <span class="metric-title" style="font-size: 0.75rem;">Total Recebido</span>
+            <span id="fin-obra-total-recebido" style="font-size: 1.15rem; font-weight:700; color:var(--success-color);">R$ 0,00</span>
+          </div>
+          <div class="metric-card" style="padding: 0.6rem 0.8rem; border-radius: 6px;">
+            <span class="metric-title" style="font-size: 0.75rem;">Custos (Saídas)</span>
+            <span id="fin-obra-total-custos" style="font-size: 1.15rem; font-weight:700; color:var(--danger-color);">R$ 0,00</span>
+          </div>
+          <div class="metric-card" style="padding: 0.6rem 0.8rem; border-radius: 6px;">
+            <span class="metric-title" style="font-size: 0.75rem;">Lucro Real</span>
+            <span id="fin-obra-lucro-real" style="font-size: 1.15rem; font-weight:700; color:#2E7D32;">R$ 0,00</span>
+          </div>
+        </div>
+
+        <!-- Seção de Ações e Lançamentos -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem;">
+          <!-- Formulários de Adicionar Lançamento -->
+          <div style="border-right: 1px solid var(--border-color); padding-right: 0.5rem;">
+            
+            <!-- Adicionar Serviço Extra -->
+            <div style="background-color: var(--bg-color); padding: 0.8rem; border-radius: 6px; margin-bottom: 0.8rem; border: 1px solid var(--border-color);">
+              <h4 style="font-family: var(--font-title); font-size: 0.9rem; color: var(--primary-color); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Serviço / Valor Extra</h4>
+              <form id="form-extra-obra">
+                <div class="form-group" style="margin-bottom: 0.4rem;">
+                  <input type="text" id="extra-obra-descricao" class="form-input" placeholder="Descrição do extra..." required style="padding: 0.4rem; font-size: 0.85rem;">
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <input type="number" step="0.01" id="extra-obra-valor" class="form-input" placeholder="Valor (R$)..." required style="padding: 0.4rem; font-size: 0.85rem;">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.8rem; height: 100%; border-radius: 4px; padding: 0;">Adicionar</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Adicionar Custo/Despesa -->
+            <div style="background-color: var(--bg-color); padding: 0.8rem; border-radius: 6px; border: 1px solid var(--border-color);">
+              <h4 style="font-family: var(--font-title); font-size: 0.9rem; color: var(--danger-color); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Lançar Custo / Gasto</h4>
+              <form id="form-custo-obra">
+                <div class="form-group" style="margin-bottom: 0.4rem;">
+                  <select id="custo-obra-tipo" class="form-input" required style="padding: 0.4rem; font-size: 0.85rem;">
+                    <option value="">Selecione o tipo...</option>
+                    <option value="ajudante">Ajudante (Mão de Obra)</option>
+                    <option value="pintor">Pintor (Mão de Obra)</option>
+                    <option value="fornecedor_material">Material (Fornecedor)</option>
+                    <option value="alimentacao">Alimentação / Viagem</option>
+                    <option value="outro">Outro Gasto na Obra</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0.4rem;">
+                  <input type="text" id="custo-obra-descricao" class="form-input" placeholder="Descrição do gasto (ex: diária, cimento)..." required style="padding: 0.4rem; font-size: 0.85rem;">
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.4rem; margin-bottom: 0.4rem;">
+                  <input type="number" step="0.01" id="custo-obra-valor" class="form-input" placeholder="Valor (R$)..." required style="padding: 0.4rem; font-size: 0.85rem;">
+                  <input type="date" id="custo-obra-data" class="form-input" required style="padding: 0.4rem; font-size: 0.85rem;">
+                </div>
+                
+                <!-- Uploader de nota -->
+                <div id="custo-obra-uploader" class="photo-uploader" style="padding: 0.5rem; border: 1.5px dashed var(--border-color); text-align: center; border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.1rem; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Anexar Recibo/Nota
+                </div>
+                <input type="file" id="custo-obra-comprovante-input" class="hidden-file-input" accept="image/*" style="display: none;">
+                
+                <div id="custo-obra-comprovante-preview" style="display: none; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; background-color: #E2F6EA; padding: 0.3rem 0.5rem; border-radius: 4px;">
+                  <span style="font-size: 0.7rem; color: var(--success-color); font-weight: 600;">Nota anexada!</span>
+                  <img id="img-custo-obra-preview" src="" style="width: 28px; height: 28px; object-fit: cover; border-radius: 3px;">
+                </div>
+
+                <button type="submit" class="btn btn-danger btn-sm" style="width: 100%; border-radius: 4px; font-size: 0.85rem; padding: 0.4rem 0;">Salvar Custo</button>
+              </form>
+            </div>
+
+          </div>
+
+          <!-- Histórico de Lançamentos -->
+          <div style="display: flex; flex-direction: column; max-height: 400px;">
+            <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.5rem;">
+              <button id="tab-modal-despesas" class="subtab-btn active" style="flex: 1; font-size: 0.8rem; padding: 0.3rem 0;">Despesas da Obra</button>
+              <button id="tab-modal-extras" class="subtab-btn" style="flex: 1; font-size: 0.8rem; padding: 0.3rem 0;">Serviços Extras</button>
+            </div>
+            
+            <div style="flex: 1; overflow-y: auto;" id="modal-financeiro-list-container">
+              <!-- Lançamentos da obra renderizados dinamicamente pelo JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CADASTRAR GASTO AVULSO / PESSOAL    -->
+  <!-- ========================================== -->
+  <div id="modal-gasto-avulso-overlay" class="modal-overlay">
+    <div class="modal-container modal-alert" style="max-width: 450px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Novo Gasto Avulso / Pessoal</h2>
+        <button class="modal-close" onclick="closeModal('modal-gasto-avulso-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-gasto-avulso">
+          <div class="form-group">
+            <label class="form-label" for="gasto-avulso-tipo">Tipo do Gasto</label>
+            <select id="gasto-avulso-tipo" class="form-input" required style="padding:0.5rem;">
+              <option value="">Selecione...</option>
+              <option value="gasto_pessoal">Gasto Pessoal (Café / Almoço / etc.)</option>
+              <option value="material_avulso">Material Avulso (Empresa)</option>
+              <option value="pagamento_avulso">Pagamento Avulso (Ajudantes / etc.)</option>
+              <option value="outro">Outras Despesas</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="gasto-avulso-descricao">Descrição/Destino</label>
+            <input type="text" id="gasto-avulso-descricao" class="form-input" placeholder="A que se destina o gasto..." required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="gasto-avulso-valor">Valor (R$)</label>
+              <input type="number" step="0.01" id="gasto-avulso-valor" class="form-input" placeholder="0,00" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="gasto-avulso-data">Data</label>
+              <input type="date" id="gasto-avulso-data" class="form-input" required>
+            </div>
+          </div>
+          
+          <!-- Anexar Recibo -->
+          <div class="form-group">
+            <label class="form-label">Comprovante / Nota</label>
+            <div id="gasto-avulso-uploader" class="photo-uploader" style="padding: 1.2rem; border: 2px dashed var(--border-color); text-align: center; border-radius: 6px; cursor: pointer; color: var(--text-muted);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.3rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <p style="font-size: 0.8rem; font-weight:600;">Clique para carregar imagem</p>
+            </div>
+            <input type="file" id="gasto-avulso-comprovante-input" class="hidden-file-input" accept="image/*" style="display: none;">
+            
+            <div id="gasto-avulso-comprovante-preview" style="display: none; align-items: center; justify-content: space-between; margin-top: 0.5rem; background-color: #E2F6EA; padding: 0.5rem; border-radius: 6px;">
+              <span style="font-size: 0.75rem; color: var(--success-color); font-weight: 600;">Nota anexada!</span>
+              <img id="img-gasto-avulso-preview" src="" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px;">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 1rem;">Salvar Lançamento</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CADASTRAR INVESTIMENTO              -->
+  <!-- ========================================== -->
+  <div id="modal-investimento-overlay" class="modal-overlay">
+    <div class="modal-container modal-alert" style="max-width: 450px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Novo Investimento (Empresa)</h2>
+        <button class="modal-close" onclick="closeModal('modal-investimento-overlay')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-investimento">
+          <div class="form-group">
+            <label class="form-label" for="investimento-descricao">Descrição do Equipamento / Melhoria</label>
+            <input type="text" id="investimento-descricao" class="form-input" placeholder="Furadeira, andaime, curso, etc..." required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="investimento-valor">Valor de Compra (R$)</label>
+              <input type="number" step="0.01" id="investimento-valor" class="form-input" placeholder="0,00" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="investimento-data">Data de Compra</label>
+              <input type="date" id="investimento-data" class="form-input" required>
+            </div>
+          </div>
+          
+          <!-- Anexar Recibo -->
+          <div class="form-group">
+            <label class="form-label">Foto do Produto / Recibo</label>
+            <div id="investimento-uploader" class="photo-uploader" style="padding: 1.2rem; border: 2px dashed var(--border-color); text-align: center; border-radius: 6px; cursor: pointer; color: var(--text-muted);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.3rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <p style="font-size: 0.8rem; font-weight:600;">Clique para carregar imagem</p>
+            </div>
+            <input type="file" id="investimento-comprovante-input" class="hidden-file-input" accept="image/*" style="display: none;">
+            
+            <div id="investimento-comprovante-preview" style="display: none; align-items: center; justify-content: space-between; margin-top: 0.5rem; background-color: #E2F6EA; padding: 0.5rem; border-radius: 6px;">
+              <span style="font-size: 0.75rem; color: var(--success-color); font-weight: 600;">Imagem carregada!</span>
+              <img id="img-investimento-preview" src="" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px;">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 1rem;">Salvar Investimento</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
   <!-- CONTAINER DE IMPRESSÃO (Oculto na tela)    -->
   <!-- ========================================== -->
   <div id="print-layout">
@@ -513,7 +865,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="./db.js?v=8"></script>
-  <script src="./app.js?v=8"></script>
+  <script src="./db.js?v=12"></script>
+  <script src="./app.js?v=12"></script>
 </body>
 </html>

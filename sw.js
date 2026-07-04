@@ -1,15 +1,15 @@
 // sw.js - Service Worker para P.S.O REFORMAS
-const CACHE_NAME = 'pso-reformas-cache-v8';
+const CACHE_NAME = 'pso-reformas-cache-v12';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './index.css',
-  './app.js?v=8',
-  './db.js?v=8',
+  './app.js?v=12',
+  './db.js?v=12',
   './logo.png',
   './psofd.png',
   './pwa_icon.jpg',
-  './manifest.json'
+  './manifest.json?v=12'
 ];
 
 // Instalação do Service Worker e Cache dos arquivos
@@ -38,6 +38,18 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Helper para limpar respostas redirecionadas (evita erros de segurança do FetchEvent no navegador)
+function cleanRedirectedResponse(response) {
+  if (response && response.redirected) {
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
+  }
+  return response;
+}
+
 // Interceptação de requisições (Cache First com fallback para Network)
 self.addEventListener('fetch', (event) => {
   // Ignora chamadas à API do PocketBase para que elas sempre tentem a rede
@@ -48,26 +60,29 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        return cachedResponse;
+        // Se a resposta do cache for uma resposta redirecionada, limpa ou busca da rede
+        return cleanRedirectedResponse(cachedResponse);
       }
       
       // Se não estiver no cache, busca na rede
       return fetch(event.request).then((response) => {
+        // Limpa redirecionamento se houver
+        const cleanResponse = cleanRedirectedResponse(response);
+
         // Verifica se a resposta é válida antes de colocar no cache
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
+        if (!cleanResponse || cleanResponse.status !== 200 || cleanResponse.type !== 'basic') {
+          return cleanResponse;
         }
 
         // Duplica a resposta para salvar no cache
-        const responseToCache = response.clone();
+        const responseToCache = cleanResponse.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
         });
 
-        return response;
+        return cleanResponse;
       }).catch((err) => {
         console.log('SW: Erro ao buscar rede (provavelmente offline):', err);
-        // Opcional: retornar uma página offline padrão se quiser, mas como o index.html é cacheado, ele já abre.
       });
     })
   );

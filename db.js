@@ -1,7 +1,7 @@
 // db.js - Gerenciador de Banco de Dados Local (IndexedDB) para P.S.O REFORMAS
 
 const DB_NAME = 'pso_reformas_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbInstance = null;
 
@@ -30,6 +30,16 @@ function initDB() {
       // Criar store de obras se não existir
       if (!db.objectStoreNames.contains('obras')) {
         db.createObjectStore('obras', { keyPath: 'id' });
+      }
+
+      // Criar store de despesas_avulsas se não existir
+      if (!db.objectStoreNames.contains('despesas_avulsas')) {
+        db.createObjectStore('despesas_avulsas', { keyPath: 'id' });
+      }
+
+      // Criar store de investimentos se não existir
+      if (!db.objectStoreNames.contains('investimentos')) {
+        db.createObjectStore('investimentos', { keyPath: 'id' });
       }
     };
 
@@ -201,6 +211,84 @@ const dbObras = {
   }
 };
 
+// === DESPESAS AVULSAS ===
+const dbDespesasAvulsas = {
+  async getAll() {
+    const store = await getStore('despesas_avulsas');
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async save(despesa) {
+    const store = await getStore('despesas_avulsas', 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.put(despesa);
+      request.onsuccess = () => resolve(despesa);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async delete(id) {
+    const store = await getStore('despesas_avulsas', 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async clearAll() {
+    const store = await getStore('despesas_avulsas', 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+};
+
+// === INVESTIMENTOS ===
+const dbInvestimentos = {
+  async getAll() {
+    const store = await getStore('investimentos');
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async save(investimento) {
+    const store = await getStore('investimentos', 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.put(investimento);
+      request.onsuccess = () => resolve(investimento);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async delete(id) {
+    const store = await getStore('investimentos', 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async clearAll() {
+    const store = await getStore('investimentos', 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+};
+
 // === CONTROLES DE BACKUP ===
 
 // Dispara o download de um arquivo JSON no navegador
@@ -272,24 +360,28 @@ async function importOrcamentosBackup(jsonData) {
   }
 }
 
-// Exportar backup geral (todos os clientes, orçamentos e obras em um único arquivo)
+// Exportar backup geral (todos os clientes, orçamentos, obras, despesas avulsas e investimentos em um único arquivo)
 async function exportGeralBackup() {
   const clientes = await dbClientes.getAll();
   const orcamentos = await dbOrcamentos.getAll();
   const obras = await dbObras.getAll();
+  const despesasAvulsas = await dbDespesasAvulsas.getAll();
+  const investimentos = await dbInvestimentos.getAll();
   
   const backupData = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     clientes: clientes,
     orcamentos: orcamentos,
-    obras: obras
+    obras: obras,
+    despesasAvulsas: despesasAvulsas,
+    investimentos: investimentos
   };
   
   downloadJsonFile(backupData, `pso_backup_geral_${new Date().toISOString().slice(0, 10)}.json`);
 }
 
-// Importar backup geral (clientes, orçamentos e obras juntos com compatibilidade retroativa)
+// Importar backup geral (clientes, orçamentos, obras, despesas avulsas e investimentos juntos com compatibilidade retroativa)
 async function importGeralBackup(jsonData) {
   try {
     const backup = JSON.parse(jsonData);
@@ -297,15 +389,15 @@ async function importGeralBackup(jsonData) {
     // Suporte ao formato legado caso o usuário tente carregar um backup antigo de apenas clientes ou apenas orçamentos (como lista)
     if (Array.isArray(backup)) {
       if (backup.length === 0) {
-        return { success: true, clientesCount: 0, orcamentosCount: 0, obrasCount: 0 };
+        return { success: true, clientesCount: 0, orcamentosCount: 0, obrasCount: 0, despesasAvulsasCount: 0, investimentosCount: 0 };
       }
       const first = backup[0];
       if (first.nome) {
         const res = await importClientesBackup(jsonData);
-        return { success: res.success, clientesCount: res.count, orcamentosCount: 0, obrasCount: 0, error: res.error };
+        return { success: res.success, clientesCount: res.count, orcamentosCount: 0, obrasCount: 0, despesasAvulsasCount: 0, investimentosCount: 0, error: res.error };
       } else if (first.codigo) {
         const res = await importOrcamentosBackup(jsonData);
-        return { success: res.success, clientesCount: 0, orcamentosCount: res.count, obrasCount: 0, error: res.error };
+        return { success: res.success, clientesCount: 0, orcamentosCount: res.count, obrasCount: 0, despesasAvulsasCount: 0, investimentosCount: 0, error: res.error };
       }
       throw new Error('Formato de lista desconhecido.');
     }
@@ -314,7 +406,7 @@ async function importGeralBackup(jsonData) {
     if (backup.clientes === undefined && backup.orcamentos === undefined) {
       if (backup.codigo) {
         const res = await importOrcamentosBackup(JSON.stringify([backup]));
-        return { success: res.success, clientesCount: 0, orcamentosCount: res.count, obrasCount: 0, error: res.error };
+        return { success: res.success, clientesCount: 0, orcamentosCount: res.count, obrasCount: 0, despesasAvulsasCount: 0, investimentosCount: 0, error: res.error };
       }
       throw new Error('Arquivo de backup inválido ou incompatível.');
     }
@@ -322,6 +414,8 @@ async function importGeralBackup(jsonData) {
     let clientesCount = 0;
     let orcamentosCount = 0;
     let obrasCount = 0;
+    let despesasAvulsasCount = 0;
+    let investimentosCount = 0;
     
     if (backup.clientes && Array.isArray(backup.clientes)) {
       for (const cli of backup.clientes) {
@@ -349,8 +443,33 @@ async function importGeralBackup(jsonData) {
         }
       }
     }
+
+    if (backup.despesasAvulsas && Array.isArray(backup.despesasAvulsas)) {
+      for (const desp of backup.despesasAvulsas) {
+        if (desp.id && desp.valor) {
+          await dbDespesasAvulsas.save(desp);
+          despesasAvulsasCount++;
+        }
+      }
+    }
+
+    if (backup.investimentos && Array.isArray(backup.investimentos)) {
+      for (const inv of backup.investimentos) {
+        if (inv.id && inv.valor) {
+          await dbInvestimentos.save(inv);
+          investimentosCount++;
+        }
+      }
+    }
     
-    return { success: true, clientesCount, orcamentosCount, obrasCount };
+    return { 
+      success: true, 
+      clientesCount, 
+      orcamentosCount, 
+      obrasCount, 
+      despesasAvulsasCount, 
+      investimentosCount 
+    };
   } catch (error) {
     console.error('Erro na importação do backup geral:', error);
     return { success: false, error: error.message };

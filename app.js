@@ -1,18 +1,35 @@
 // app.js - P.S.O REFORMAS - Soluções Criativas
 
+// Diagnosticador global de erros para depuração na interface
+window.onerror = function(message, source, lineno, colno, error) {
+  const statusText = document.getElementById('status-text');
+  if (statusText) {
+    statusText.style.color = '#E74C3C';
+    statusText.style.display = 'inline-block';
+    statusText.textContent = 'Erro: ' + message + ' (L' + lineno + ')';
+  }
+  return false;
+};
+
 // URL do PocketBase (vazio para usar a URL relativa do host)
 const PB_URL = '';
 
 // Estado Global
 let state = {
-  activeTab: 'orcamentos', // orcamentos, clientes, backups, obras
+  activeTab: 'orcamentos', // orcamentos, clientes, backups, obras, financeiro
   clientes: [],
   orcamentos: [],
   obras: [],
+  despesasAvulsas: [],
+  investimentos: [],
   online: navigator.onLine,
   currentBudgetPhotos: [], // Array de base64 strings para o formulário
   fastAddingClient: false, // Flag para selecionar cliente recém cadastrado
   currentPaymentReceipt: null, // base64 string para o formulário de pagamento
+  currentGastoAvulsoComprovante: null,
+  currentInvestimentoComprovante: null,
+  currentCustoObraComprovante: null,
+  currentFinObraSubtab: 'despesas', // despesas, extras
 };
 
 // Carregar Lucide Icons
@@ -47,6 +64,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderObrasList();
   renderObrasConcluidasList();
   renderClientesDropdown();
+  renderFinanceiroDashboard();
+  renderExtratoTable();
+  renderGastosAvulsosList();
+  renderInvestimentosGrid();
   updateSyncCounters();
   
   loadIcons();
@@ -83,6 +104,8 @@ async function loadLocalData() {
     state.clientes = await dbClientes.getAll();
     state.orcamentos = await dbOrcamentos.getAll();
     state.obras = await dbObras.getAll();
+    state.despesasAvulsas = await dbDespesasAvulsas.getAll();
+    state.investimentos = await dbInvestimentos.getAll();
     
     // Ordena orçamentos pelo código descrescente
     state.orcamentos.sort((a, b) => (b.codigo || '').localeCompare(a.codigo || ''));
@@ -95,6 +118,12 @@ async function loadLocalData() {
       const dateB = b.updatedAt || b.dataInicio || '';
       return dateB.localeCompare(dateA);
     });
+
+    // Ordena despesas avulsas por data decrescente
+    state.despesasAvulsas.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+
+    // Ordena investimentos por data decrescente
+    state.investimentos.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
   } catch (err) {
     console.error('Erro ao carregar dados locais:', err);
   }
@@ -186,6 +215,92 @@ function setupEventListeners() {
   if (pagUploader && pagFileInput) {
     pagUploader.addEventListener('click', () => pagFileInput.click());
     pagFileInput.addEventListener('change', handlePagamentoComprovanteSelection);
+  }
+
+  // --- MÓDULO FINANCEIRO (EVENTOS) ---
+  
+  // Cliques nas Sub-abas do Financeiro
+  document.querySelectorAll('.subtab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subtab = btn.dataset.subtab;
+      btn.parentElement.querySelectorAll('.subtab-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+      });
+      document.querySelectorAll('.subview-section').forEach(section => {
+        section.classList.toggle('active', section.id === `subview-${subtab}`);
+      });
+      loadIcons();
+    });
+  });
+
+  // Filtro do Extrato Geral
+  addListenerIfExists('filter-extrato-tipo', 'change', () => {
+    renderExtratoTable();
+  });
+
+  // Gasto Avulso / Pessoal
+  addListenerIfExists('btn-novo-gasto-avulso', 'click', () => {
+    document.getElementById('form-gasto-avulso').reset();
+    state.currentGastoAvulsoComprovante = null;
+    document.getElementById('gasto-avulso-comprovante-preview').style.display = 'none';
+    document.getElementById('gasto-avulso-data').value = new Date().toISOString().slice(0, 10);
+    openModal('modal-gasto-avulso-overlay');
+  });
+
+  addListenerIfExists('form-gasto-avulso', 'submit', handleSaveGastoAvulso);
+
+  const gastoUploader = document.getElementById('gasto-avulso-uploader');
+  const gastoFileInput = document.getElementById('gasto-avulso-comprovante-input');
+  if (gastoUploader && gastoFileInput) {
+    gastoUploader.addEventListener('click', () => gastoFileInput.click());
+    gastoFileInput.addEventListener('change', handleGastoAvulsoComprovanteSelection);
+  }
+
+  // Investimentos
+  addListenerIfExists('btn-novo-investimento', 'click', () => {
+    document.getElementById('form-investimento').reset();
+    state.currentInvestimentoComprovante = null;
+    document.getElementById('investimento-comprovante-preview').style.display = 'none';
+    document.getElementById('investimento-data').value = new Date().toISOString().slice(0, 10);
+    openModal('modal-investimento-overlay');
+  });
+
+  addListenerIfExists('form-investimento', 'submit', handleSaveInvestimento);
+
+  const invUploader = document.getElementById('investimento-uploader');
+  const invFileInput = document.getElementById('investimento-comprovante-input');
+  if (invUploader && invFileInput) {
+    invUploader.addEventListener('click', () => invFileInput.click());
+    invFileInput.addEventListener('change', handleInvestimentoComprovanteSelection);
+  }
+
+  // Modais Internos do Financeiro da Obra
+  addListenerIfExists('tab-modal-despesas', 'click', () => {
+    state.currentFinObraSubtab = 'despesas';
+    const tabDesp = document.getElementById('tab-modal-despesas');
+    const tabExt = document.getElementById('tab-modal-extras');
+    if (tabDesp) tabDesp.classList.add('active');
+    if (tabExt) tabExt.classList.remove('active');
+    renderModalFinanceiroObraList();
+  });
+
+  addListenerIfExists('tab-modal-extras', 'click', () => {
+    state.currentFinObraSubtab = 'extras';
+    const tabDesp = document.getElementById('tab-modal-despesas');
+    const tabExt = document.getElementById('tab-modal-extras');
+    if (tabExt) tabExt.classList.add('active');
+    if (tabDesp) tabDesp.classList.remove('active');
+    renderModalFinanceiroObraList();
+  });
+
+  addListenerIfExists('form-extra-obra', 'submit', handleSaveExtraObra);
+  addListenerIfExists('form-custo-obra', 'submit', handleSaveCustoObra);
+
+  const custoObraUploader = document.getElementById('custo-obra-uploader');
+  const custoObraFileInput = document.getElementById('custo-obra-comprovante-input');
+  if (custoObraUploader && custoObraFileInput) {
+    custoObraUploader.addEventListener('click', () => custoObraFileInput.click());
+    custoObraFileInput.addEventListener('change', handleCustoObraComprovanteSelection);
   }
 }
 
@@ -1015,9 +1130,11 @@ function handleImportGeralFile(e) {
 
     if (res.success) {
       const obrasMsg = res.obrasCount !== undefined ? `, ${res.obrasCount} obras` : '';
+      const despesasMsg = res.despesasAvulsasCount !== undefined ? `, ${res.despesasAvulsasCount} gastos avulsos` : '';
+      const investimentosMsg = res.investimentosCount !== undefined ? `, ${res.investimentosCount} investimentos` : '';
       showCustomAlert(
         'Importação Concluída', 
-        `Backup importado com sucesso! ${res.clientesCount} clientes, ${res.orcamentosCount} orçamentos${obrasMsg} foram carregados localmente.`
+        `Backup importado com sucesso! ${res.clientesCount} clientes, ${res.orcamentosCount} orçamentos${obrasMsg}${despesasMsg}${investimentosMsg} foram carregados localmente.`
       );
       await loadLocalData();
       renderClientesList();
@@ -1025,6 +1142,10 @@ function handleImportGeralFile(e) {
       renderOrcamentosList();
       renderObrasList();
       renderObrasConcluidasList();
+      renderFinanceiroDashboard();
+      renderExtratoTable();
+      renderGastosAvulsosList();
+      renderInvestimentosGrid();
       updateSyncCounters();
     } else {
       showCustomAlert('Falha na Importação', `Erro: ${res.error}`, false);
@@ -1040,20 +1161,24 @@ function updateSyncCounters() {
   const pendingCli = state.clientes.filter(c => !c.synced).length;
   const pendingOrc = state.orcamentos.filter(o => !o.synced).length;
 
-  document.getElementById('pending-clientes-count').textContent = pendingCli;
-  document.getElementById('pending-orcamentos-count').textContent = pendingOrc;
+  const elPendingCli = document.getElementById('pending-clientes-count');
+  const elPendingOrc = document.getElementById('pending-orcamentos-count');
+  if (elPendingCli) elPendingCli.textContent = pendingCli;
+  if (elPendingOrc) elPendingOrc.textContent = pendingOrc;
 
   const syncBtn = document.getElementById('btn-sync-pocketbase');
-  if (pendingCli === 0 && pendingOrc === 0) {
-    syncBtn.disabled = true;
-    syncBtn.textContent = 'Tudo Sincronizado';
-    syncBtn.classList.remove('btn-accent');
-    syncBtn.classList.add('btn-secondary');
-  } else {
-    syncBtn.disabled = false;
-    syncBtn.textContent = 'Sincronizar com PocketBase';
-    syncBtn.classList.add('btn-accent');
-    syncBtn.classList.remove('btn-secondary');
+  if (syncBtn) {
+    if (pendingCli === 0 && pendingOrc === 0) {
+      syncBtn.disabled = true;
+      syncBtn.textContent = 'Tudo Sincronizado';
+      syncBtn.classList.remove('btn-accent');
+      syncBtn.classList.add('btn-secondary');
+    } else {
+      syncBtn.disabled = false;
+      syncBtn.textContent = 'Sincronizar com PocketBase';
+      syncBtn.classList.add('btn-accent');
+      syncBtn.classList.remove('btn-secondary');
+    }
   }
 }
 
@@ -1436,14 +1561,15 @@ function renderObrasList() {
     const cliente = state.clientes.find(c => c.id === obra.clienteId);
     
     // Cálculo financeiro
-    const totalCombinado = obra.valorCombinado;
+    const totalExtras = (obra.valoresExtras || []).reduce((acc, curr) => acc + curr.valor, 0);
+    const totalContrato = obra.valorCombinado + totalExtras;
     const entrada = obra.valorEntrada;
     const somaPagamentos = (obra.pagamentos || []).reduce((acc, curr) => acc + curr.valor, 0);
     const totalPago = entrada + somaPagamentos;
-    const valorRestante = totalCombinado - totalPago;
+    const valorRestante = totalContrato - totalPago;
 
     // Formatação de valores
-    const fCombinado = totalCombinado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fCombinado = totalContrato.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fEntrada = entrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fRestante = valorRestante.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fTotalPago = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1562,7 +1688,14 @@ E-mail: psoreformas@gmail.com
         </button>
       </div>
 
-      <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+      <div class="card-actions" style="margin-top: 1rem;">
+        <button class="btn btn-secondary btn-sm" onclick="abrirFinanceiroObra('${obra.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem; background-color: #F0F4F8; border-color: #D0DBE5; color: var(--primary-color);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Financeiro & Custos da Obra
+        </button>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
         <button class="btn btn-success btn-sm" onclick="finalizarObraCard('${obra.id}')" style="flex: 1;">Finalizar Obra</button>
         <button class="btn btn-danger btn-sm" onclick="deleteObraCard('${obra.id}')" style="flex: 1;">Excluir Obra</button>
       </div>
@@ -1625,14 +1758,15 @@ function renderObrasConcluidasList() {
     const cliente = state.clientes.find(c => c.id === obra.clienteId);
     
     // Cálculo financeiro
-    const totalCombinado = obra.valorCombinado;
+    const totalExtras = (obra.valoresExtras || []).reduce((acc, curr) => acc + curr.valor, 0);
+    const totalContrato = obra.valorCombinado + totalExtras;
     const entrada = obra.valorEntrada;
     const somaPagamentos = (obra.pagamentos || []).reduce((acc, curr) => acc + curr.valor, 0);
     const totalPago = entrada + somaPagamentos;
-    const valorRestante = totalCombinado - totalPago;
+    const valorRestante = totalContrato - totalPago;
 
     // Formatação de valores
-    const fCombinado = totalCombinado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fCombinado = totalContrato.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fEntrada = entrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fRestante = valorRestante.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fTotalPago = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1750,9 +1884,753 @@ E-mail: psoreformas@gmail.com
       </div>
 
       <div class="card-actions" style="margin-top: 1rem;">
+        <button class="btn btn-secondary btn-sm" onclick="abrirFinanceiroObra('${obra.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem; background-color: #F0F4F8; border-color: #D0DBE5; color: var(--primary-color); margin-bottom: 0.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Financeiro & Custos da Obra
+        </button>
         <button class="btn btn-danger btn-sm" onclick="deleteObraCard('${obra.id}')" style="width: 100%;">Excluir Registro</button>
       </div>
     `;
     list.appendChild(card);
   });
 }
+
+// ==========================================================================
+// MÓDULO FINANCEIRO - FLUXO DE CAIXA, INVESTIMENTOS E DESPESAS
+// ==========================================================================
+
+// Helper para converter imagem de comprovante em Base64
+function readComprovanteFile(file, stateTargetKey, previewImgId, previewDivId) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state[stateTargetKey] = e.target.result;
+    const previewImg = document.getElementById(previewImgId);
+    const previewDiv = document.getElementById(previewDivId);
+    if (previewImg && previewDiv) {
+      previewImg.src = e.target.result;
+      previewDiv.style.display = 'flex';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// Handlers de seleção de arquivos/notas
+function handleGastoAvulsoComprovanteSelection(e) {
+  if (e.target.files && e.target.files[0]) {
+    readComprovanteFile(e.target.files[0], 'currentGastoAvulsoComprovante', 'img-gasto-avulso-preview', 'gasto-avulso-comprovante-preview');
+  }
+}
+
+// Handler para resetar comprovantes
+function handleInvestimentoComprovanteSelection(e) {
+  if (e.target.files && e.target.files[0]) {
+    readComprovanteFile(e.target.files[0], 'currentInvestimentoComprovante', 'img-investimento-preview', 'investimento-comprovante-preview');
+  }
+}
+
+function handleCustoObraComprovanteSelection(e) {
+  if (e.target.files && e.target.files[0]) {
+    readComprovanteFile(e.target.files[0], 'currentCustoObraComprovante', 'img-custo-obra-preview', 'custo-obra-comprovante-preview');
+  }
+}
+
+// Tradutores de Categoria
+function getDespesaLabel(tipo) {
+  const labels = {
+    ajudante: 'Ajudante',
+    pintor: 'Pintor',
+    fornecedor_material: 'Material',
+    alimentacao: 'Alimentação',
+    outro: 'Outro Custo'
+  };
+  return labels[tipo] || tipo;
+}
+
+function getGastoAvulsoLabel(tipo) {
+  const labels = {
+    gasto_pessoal: 'Gasto Pessoal',
+    material_avulso: 'Material Avulso',
+    pagamento_avulso: 'Pagamento Avulso',
+    outro: 'Outro Gasto'
+  };
+  return labels[tipo] || tipo;
+}
+
+// --- RENDERIZADORES DO FINANCEIRO ---
+
+// 1. Dashboard de Caixa Geral
+function renderFinanceiroDashboard() {
+  let totalEntradas = 0;
+  let totalDespesas = 0;
+  let totalInvestimentos = 0;
+
+  // Entradas das Obras (Entradas + Pagamentos parciais)
+  state.obras.forEach(obra => {
+    totalEntradas += obra.valorEntrada || 0;
+    if (obra.pagamentos) {
+      obra.pagamentos.forEach(p => totalEntradas += p.valor);
+    }
+    // Despesas de cada obra
+    if (obra.despesas) {
+      obra.despesas.forEach(d => totalDespesas += d.valor);
+    }
+  });
+
+  // Despesas Avulsas/Pessoais
+  state.despesasAvulsas.forEach(d => {
+    totalDespesas += d.valor;
+  });
+
+  // Investimentos
+  state.investimentos.forEach(i => {
+    totalInvestimentos += i.valor;
+  });
+
+  const saldoCaixa = totalEntradas - totalDespesas - totalInvestimentos;
+
+  // Injeção no HTML
+  const elSaldo = document.getElementById('fin-saldo-caixa');
+  const elEntradas = document.getElementById('fin-total-entradas');
+  const elDespesas = document.getElementById('fin-total-despesas');
+  const elInvestimentos = document.getElementById('fin-total-investimentos');
+
+  if (elSaldo) elSaldo.textContent = saldoCaixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  if (elEntradas) elEntradas.textContent = totalEntradas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  if (elDespesas) elDespesas.textContent = totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  if (elInvestimentos) elInvestimentos.textContent = totalInvestimentos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// 2. Extrato Geral (Fluxo de Caixa)
+function renderExtratoTable() {
+  const tbody = document.getElementById('extrato-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const filterEl = document.getElementById('filter-extrato-tipo');
+  const filterTipo = filterEl ? filterEl.value : 'todos';
+  let transacoes = [];
+
+  // Compila entradas e despesas de obras
+  state.obras.forEach(obra => {
+    // Valor da Entrada da obra
+    transacoes.push({
+      data: obra.dataInicio,
+      tipo: 'entrada',
+      categoria: 'Entrada Obra',
+      origem: obra.codigoOrcamento,
+      descricao: `Entrada de contrato - Cliente: ${obra.clienteNome}`,
+      valor: obra.valorEntrada,
+      comprovante: null
+    });
+
+    // Pagamentos parciais
+    if (obra.pagamentos) {
+      obra.pagamentos.forEach(p => {
+        transacoes.push({
+          data: p.data,
+          tipo: 'entrada',
+          categoria: 'Pagamento Parcial',
+          origem: obra.codigoOrcamento,
+          descricao: `Parcela recebida de contrato`,
+          valor: p.valor,
+          comprovante: p.comprovante
+        });
+      });
+    }
+
+    // Despesas específicas da obra
+    if (obra.despesas) {
+      obra.despesas.forEach(d => {
+        transacoes.push({
+          data: d.data,
+          tipo: 'saida',
+          categoria: getDespesaLabel(d.tipo),
+          origem: obra.codigoOrcamento,
+          descricao: d.descricao,
+          valor: d.valor,
+          comprovante: d.comprovante
+        });
+      });
+    }
+  });
+
+  // Compila despesas avulsas
+  state.despesasAvulsas.forEach(d => {
+    transacoes.push({
+      data: d.data,
+      tipo: 'saida',
+      categoria: getGastoAvulsoLabel(d.tipo),
+      origem: 'Avulso/Pessoal',
+      descricao: d.descricao,
+      valor: d.valor,
+      comprovante: d.comprovante
+    });
+  });
+
+  // Compila investimentos
+  state.investimentos.forEach(i => {
+    transacoes.push({
+      data: i.data,
+      tipo: 'investimento',
+      categoria: 'Investimento',
+      origem: 'Invest. Empresa',
+      descricao: `Compra: ${i.descricao}`,
+      valor: i.valor,
+      comprovante: i.comprovante
+    });
+  });
+
+  // Ordena por data decrescente
+  transacoes.sort((a, b) => b.data.localeCompare(a.data));
+
+  // Filtra
+  if (filterTipo !== 'todos') {
+    transacoes = transacoes.filter(t => t.tipo === filterTipo);
+  }
+
+  if (transacoes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding: 2rem; color:var(--text-muted); font-style:italic;">
+          Nenhuma transação registrada.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  transacoes.forEach(t => {
+    const row = document.createElement('tr');
+    
+    const fData = t.data.split('-').reverse().join('/');
+    const fValor = t.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    let badgeClass = 'saida';
+    let badgeText = 'Saída';
+    if (t.tipo === 'entrada') {
+      badgeClass = 'entrada';
+      badgeText = 'Entrada';
+    } else if (t.tipo === 'investimento') {
+      badgeClass = 'investimento';
+      badgeText = 'Invest.';
+    }
+
+    let thumbHtml = '<span style="color:var(--text-muted); font-size:0.75rem;">—</span>';
+    if (t.comprovante) {
+      thumbHtml = `<img class="thumb-comprovante" src="${t.comprovante}" onclick="visualizarComprovante('${t.comprovante}')" title="Clique para ampliar">`;
+    }
+
+    row.innerHTML = `
+      <td style="padding: 0.75rem 0.5rem; font-weight: 500;">${fData}</td>
+      <td style="padding: 0.75rem 0.5rem;">
+        <span class="transaction-badge ${badgeClass}">${badgeText}</span>
+      </td>
+      <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--primary-color);">${t.origem}</td>
+      <td style="padding: 0.75rem 0.5rem;">
+        <div style="font-weight: 600; font-size: 0.85rem;">${t.categoria}</div>
+        <div style="font-size: 0.8rem; color:var(--text-muted);">${t.descricao}</div>
+      </td>
+      <td style="padding: 0.75rem 0.5rem; text-align: right; font-weight: 700; ${t.tipo === 'entrada' ? 'color: var(--success-color);' : 'color: var(--danger-color);'}">
+        ${t.tipo === 'entrada' ? '+' : '-'} ${fValor}
+      </td>
+      <td style="padding: 0.75rem 0.5rem; text-align: center;">${thumbHtml}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+// 3. Renderizar listagem de Gastos Avulsos
+function renderGastosAvulsosList() {
+  const container = document.getElementById('gastos-avulsos-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (state.despesasAvulsas.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted); font-style:italic;">
+        Nenhum gasto avulso ou pessoal registrado.
+      </div>
+    `;
+    return;
+  }
+
+  state.despesasAvulsas.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    
+    const fValor = d.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fData = d.data.split('-').reverse().join('/');
+    
+    let thumbHtml = '';
+    if (d.comprovante) {
+      thumbHtml = `
+        <div style="margin-top:0.5rem;">
+          <img class="payment-receipt-thumb" src="${d.comprovante}" onclick="visualizarComprovante('${d.comprovante}')" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover;" title="Ver nota ampliada">
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 0.5rem;">
+        <h4 style="margin:0; font-family: var(--font-title); font-size: 0.95rem; color: var(--primary-color);">${getGastoAvulsoLabel(d.tipo)}</h4>
+        <span style="font-size:0.75rem; color:var(--text-muted);">${fData}</span>
+      </div>
+      <div class="card-field">
+        <span class="card-label">Descrição:</span>
+        <span>${d.descricao}</span>
+      </div>
+      <div class="card-field" style="margin-top:0.3rem;">
+        <span class="card-label">Valor Pago:</span>
+        <span style="font-weight:700; color:var(--danger-color);">${fValor}</span>
+      </div>
+      ${thumbHtml}
+      
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.5rem; text-align:right;">
+        <button class="btn btn-danger btn-sm" onclick="deleteGastoAvulso('${d.id}')" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Excluir</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// 4. Renderizar grid de Investimentos
+function renderInvestimentosGrid() {
+  const grid = document.getElementById('investimentos-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  if (state.investimentos.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted); font-style:italic;">
+        Nenhum investimento em equipamentos registrado.
+      </div>
+    `;
+    return;
+  }
+
+  state.investimentos.forEach(i => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    
+    const fValor = i.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fData = i.data.split('-').reverse().join('/');
+
+    let imgHtml = '';
+    if (i.comprovante) {
+      imgHtml = `<img class="investimento-photo" src="${i.comprovante}" onclick="visualizarComprovante('${i.comprovante}')" title="Clique para ampliar a imagem">`;
+    } else {
+      imgHtml = `
+        <div style="width: 100%; height: 160px; display:flex; align-items:center; justify-content:center; background-color:#F5F7FA; border:1px solid var(--border-color); border-radius:6px; margin-top:0.5rem; color:var(--text-muted); font-size:0.8rem;">
+          Sem foto do produto
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <h4 style="margin:0; font-family: var(--font-title); font-size: 0.95rem; color: var(--primary-color);">${i.descricao}</h4>
+        <span style="font-size:0.75rem; color:var(--text-muted);">${fData}</span>
+      </div>
+      <div class="card-field" style="margin-top:0.5rem;">
+        <span class="card-label">Valor Investido:</span>
+        <span style="font-weight:700; color:var(--primary-color);">${fValor}</span>
+      </div>
+      ${imgHtml}
+      
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.5rem; text-align:right;">
+        <button class="btn btn-danger btn-sm" onclick="deleteInvestimento('${i.id}')" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Excluir</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// --- SAVE HANDLERS (FINANCEIRO GERAL) ---
+
+// Salvar Gasto Avulso / Pessoal
+async function handleSaveGastoAvulso(e) {
+  e.preventDefault();
+  
+  const id = 'gasto_' + Date.now();
+  const tipo = document.getElementById('gasto-avulso-tipo').value;
+  const descricao = document.getElementById('gasto-avulso-descricao').value;
+  const valor = parseFloat(document.getElementById('gasto-avulso-valor').value);
+  const data = document.getElementById('gasto-avulso-data').value;
+  
+  const gasto = {
+    id,
+    tipo,
+    descricao,
+    valor,
+    data,
+    comprovante: state.currentGastoAvulsoComprovante
+  };
+
+  try {
+    await dbDespesasAvulsas.save(gasto);
+    showCustomAlert('Lançamento Salvo!', 'O gasto avulso/pessoal foi registrado no caixa da empresa.');
+    closeModal('modal-gasto-avulso-overlay');
+    
+    await loadLocalData();
+    renderFinanceiroDashboard();
+    renderExtratoTable();
+    renderGastosAvulsosList();
+  } catch (err) {
+    console.error(err);
+    showCustomAlert('Erro', 'Não foi possível salvar o lançamento.');
+  }
+}
+
+// Salvar Investimento
+async function handleSaveInvestimento(e) {
+  e.preventDefault();
+
+  const id = 'inv_' + Date.now();
+  const descricao = document.getElementById('investimento-descricao').value;
+  const valor = parseFloat(document.getElementById('investimento-valor').value);
+  const data = document.getElementById('investimento-data').value;
+
+  const investimento = {
+    id,
+    descricao,
+    valor,
+    data,
+    comprovante: state.currentInvestimentoComprovante
+  };
+
+  try {
+    await dbInvestimentos.save(investimento);
+    showCustomAlert('Investimento Salvo!', 'O equipamento foi registrado e descontado do caixa geral.');
+    closeModal('modal-investimento-overlay');
+    
+    await loadLocalData();
+    renderFinanceiroDashboard();
+    renderExtratoTable();
+    renderInvestimentosGrid();
+  } catch (err) {
+    console.error(err);
+    showCustomAlert('Erro', 'Não foi possível salvar o investimento.');
+  }
+}
+
+// Excluir Lançamentos Avulsos e Investimentos
+window.deleteGastoAvulso = (id) => {
+  showCustomConfirm(
+    'Excluir Lançamento?',
+    'Tem certeza que deseja excluir esta despesa avulsa do sistema?',
+    'Excluir',
+    true,
+    async () => {
+      try {
+        await dbDespesasAvulsas.delete(id);
+        showCustomAlert('Excluído', 'A despesa foi removida do sistema.');
+        await loadLocalData();
+        renderFinanceiroDashboard();
+        renderExtratoTable();
+        renderGastosAvulsosList();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  );
+};
+
+window.deleteInvestimento = (id) => {
+  showCustomConfirm(
+    'Excluir Investimento?',
+    'Tem certeza que deseja excluir este investimento do sistema?',
+    'Excluir',
+    true,
+    async () => {
+      try {
+        await dbInvestimentos.delete(id);
+        showCustomAlert('Excluído', 'O investimento foi removido do sistema.');
+        await loadLocalData();
+        renderFinanceiroDashboard();
+        renderExtratoTable();
+        renderInvestimentosGrid();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  );
+};
+
+
+// --- FINANCEIRO DA OBRA (MODAL FINANCEIRO INDIVIDUAL DA OBRA) ---
+
+// Abrir painel financeiro da obra
+window.abrirFinanceiroObra = async (obraId) => {
+  const obra = state.obras.find(o => o.id === obraId);
+  if (!obra) return;
+
+  document.getElementById('fin-obra-id').value = obraId;
+  document.getElementById('fin-obra-titulo').textContent = `Financeiro — Obra ${obra.codigoOrcamento}`;
+
+  // Reseta formulários do modal
+  document.getElementById('form-extra-obra').reset();
+  document.getElementById('form-custo-obra').reset();
+  state.currentCustoObraComprovante = null;
+  document.getElementById('custo-obra-comprovante-preview').style.display = 'none';
+  document.getElementById('custo-obra-data').value = new Date().toISOString().slice(0, 10);
+
+  // Define subtab inicial do modal
+  state.currentFinObraSubtab = 'despesas';
+  const tabDesp = document.getElementById('tab-modal-despesas');
+  const tabExt = document.getElementById('tab-modal-extras');
+  if (tabDesp) tabDesp.classList.add('active');
+  if (tabExt) tabExt.classList.remove('active');
+
+  // Atualiza cálculos do modal e abre
+  atualizarModalFinanceiroObraCalculos(obra);
+  renderModalFinanceiroObraList();
+  openModal('modal-financeiro-obra-overlay');
+};
+
+// Calcula e atualiza métricas no cabeçalho do modal de financeiro de obra
+function atualizarModalFinanceiroObraCalculos(obra) {
+  const totalExtras = (obra.valoresExtras || []).reduce((acc, curr) => acc + curr.valor, 0);
+  const totalContrato = obra.valorCombinado + totalExtras;
+  const totalRecebido = (obra.valorEntrada || 0) + (obra.pagamentos || []).reduce((acc, curr) => acc + curr.valor, 0);
+  const totalCustos = (obra.despesas || []).reduce((acc, curr) => acc + curr.valor, 0);
+  const lucroReal = totalRecebido - totalCustos;
+
+  document.getElementById('fin-obra-total-contrato').textContent = totalContrato.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  document.getElementById('fin-obra-total-recebido').textContent = totalRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  document.getElementById('fin-obra-total-custos').textContent = totalCustos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  
+  const elLucro = document.getElementById('fin-obra-lucro-real');
+  elLucro.textContent = lucroReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  if (lucroReal >= 0) {
+    elLucro.style.color = '#2E7D32';
+  } else {
+    elLucro.style.color = 'var(--danger-color)';
+  }
+}
+
+// Renderiza a lista interna de custos ou extras do modal de obra
+function renderModalFinanceiroObraList() {
+  const obraId = document.getElementById('fin-obra-id').value;
+  const obra = state.obras.find(o => o.id === obraId);
+  if (!obra) return;
+
+  const container = document.getElementById('modal-financeiro-list-container');
+  container.innerHTML = '';
+
+  if (state.currentFinObraSubtab === 'despesas') {
+    // RENDERIZA DESPESAS
+    if (!obra.despesas || obra.despesas.length === 0) {
+      container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted); font-style:italic; padding: 1.5rem; text-align:center;">Nenhuma despesa ou pagamento lançado nesta obra.</div>`;
+      return;
+    }
+
+    obra.despesas.forEach(d => {
+      const fValor = d.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const fData = d.data.split('-').reverse().join('/');
+      
+      let thumbHtml = '<span style="font-size:0.7rem; color:var(--text-muted);">Sem comprovante</span>';
+      if (d.comprovante) {
+        thumbHtml = `<img class="thumb-comprovante" src="${d.comprovante}" onclick="visualizarComprovante('${d.comprovante}')" style="width:28px; height:28px;" title="Clique para ampliar">`;
+      }
+
+      const item = document.createElement('div');
+      item.style.padding = '0.5rem';
+      item.style.borderBottom = '1px solid var(--border-color)';
+      item.style.display = 'flex';
+      item.style.justifyContent = 'space-between';
+      item.style.alignItems = 'center';
+      
+      item.innerHTML = `
+        <div style="flex:1;">
+          <div style="font-weight: 700; font-size:0.85rem; color:var(--danger-color);">${getDespesaLabel(d.tipo)}</div>
+          <div style="font-size:0.8rem; font-weight:600;">${d.descricao}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">${fData} — <strong style="color:var(--text-main);">${fValor}</strong></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          ${thumbHtml}
+          <button class="btn btn-danger btn-sm" onclick="deleteCustoObra('${obra.id}', '${d.id}')" style="padding: 0.1rem 0.3rem; font-size:0.7rem;">Excluir</button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+  } else {
+    // RENDERIZA EXTRAS
+    if (!obra.valoresExtras || obra.valoresExtras.length === 0) {
+      container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted); font-style:italic; padding: 1.5rem; text-align:center;">Nenhum serviço extra lançado nesta obra.</div>`;
+      return;
+    }
+
+    obra.valoresExtras.forEach(ex => {
+      const fValor = ex.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      
+      const item = document.createElement('div');
+      item.style.padding = '0.5rem';
+      item.style.borderBottom = '1px solid var(--border-color)';
+      item.style.display = 'flex';
+      item.style.justifyContent = 'space-between';
+      item.style.alignItems = 'center';
+      
+      item.innerHTML = `
+        <div style="flex:1;">
+          <div style="font-weight: 700; font-size:0.85rem; color:var(--success-color);">Serviço Extra</div>
+          <div style="font-size:0.8rem; font-weight:600;">${ex.descricao}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">Adicionado: <strong style="color:var(--text-main);">${fValor}</strong></div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteExtraObra('${obra.id}', '${ex.id}')" style="padding: 0.1rem 0.3rem; font-size:0.7rem;">Excluir</button>
+      `;
+      container.appendChild(item);
+    });
+  }
+}
+
+// Salvar Serviço Extra na Obra
+async function handleSaveExtraObra(e) {
+  e.preventDefault();
+
+  const obraId = document.getElementById('fin-obra-id').value;
+  const obra = state.obras.find(o => o.id === obraId);
+  if (!obra) return;
+
+  const descricao = document.getElementById('extra-obra-descricao').value;
+  const valor = parseFloat(document.getElementById('extra-obra-valor').value);
+  const data = new Date().toISOString().slice(0, 10);
+
+  if (!obra.valoresExtras) obra.valoresExtras = [];
+
+  obra.valoresExtras.push({
+    id: 'extra_' + Date.now(),
+    descricao,
+    valor,
+    data
+  });
+  obra.updatedAt = new Date().toISOString();
+  obra.synced = false;
+
+  try {
+    await dbObras.save(obra);
+    document.getElementById('form-extra-obra').reset();
+    
+    // Recarrega dados locais e atualiza as telas
+    await loadLocalData();
+    atualizarModalFinanceiroObraCalculos(obra);
+    renderModalFinanceiroObraList();
+    
+    renderObrasList();
+    renderObrasConcluidasList();
+    renderFinanceiroDashboard();
+    renderExtratoTable();
+  } catch (err) {
+    console.error(err);
+    showCustomAlert('Erro', 'Não foi possível salvar o serviço extra.');
+  }
+}
+
+// Salvar Custo/Despesa na Obra
+async function handleSaveCustoObra(e) {
+  e.preventDefault();
+
+  const obraId = document.getElementById('fin-obra-id').value;
+  const obra = state.obras.find(o => o.id === obraId);
+  if (!obra) return;
+
+  const tipo = document.getElementById('custo-obra-tipo').value;
+  const descricao = document.getElementById('custo-obra-descricao').value;
+  const valor = parseFloat(document.getElementById('custo-obra-valor').value);
+  const data = document.getElementById('custo-obra-data').value;
+
+  if (!obra.despesas) obra.despesas = [];
+
+  obra.despesas.push({
+    id: 'desp_' + Date.now(),
+    tipo,
+    descricao,
+    valor,
+    data,
+    comprovante: state.currentCustoObraComprovante
+  });
+  obra.updatedAt = new Date().toISOString();
+  obra.synced = false;
+
+  try {
+    await dbObras.save(obra);
+    document.getElementById('form-custo-obra').reset();
+    state.currentCustoObraComprovante = null;
+    document.getElementById('custo-obra-comprovante-preview').style.display = 'none';
+    document.getElementById('custo-obra-data').value = new Date().toISOString().slice(0, 10);
+
+    // Recarrega dados locais e atualiza
+    await loadLocalData();
+    atualizarModalFinanceiroObraCalculos(obra);
+    renderModalFinanceiroObraList();
+    
+    renderObrasList();
+    renderObrasConcluidasList();
+    renderFinanceiroDashboard();
+    renderExtratoTable();
+  } catch (err) {
+    console.error(err);
+    showCustomAlert('Erro', 'Não foi possível salvar o gasto.');
+  }
+}
+
+// Excluir custo ou extra da obra
+window.deleteCustoObra = (obraId, despesaId) => {
+  showCustomConfirm(
+    'Excluir Gasto?',
+    'Tem certeza que deseja excluir esta despesa lançada nesta obra?',
+    'Excluir',
+    true,
+    async () => {
+      try {
+        const obra = state.obras.find(o => o.id === obraId);
+        if (obra && obra.despesas) {
+          obra.despesas = obra.despesas.filter(d => d.id !== despesaId);
+          obra.updatedAt = new Date().toISOString();
+          obra.synced = false;
+          await dbObras.save(obra);
+
+          await loadLocalData();
+          atualizarModalFinanceiroObraCalculos(obra);
+          renderModalFinanceiroObraList();
+          renderObrasList();
+          renderObrasConcluidasList();
+          renderFinanceiroDashboard();
+          renderExtratoTable();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  );
+};
+
+window.deleteExtraObra = (obraId, extraId) => {
+  showCustomConfirm(
+    'Excluir Serviço Extra?',
+    'Tem certeza que deseja excluir este serviço extra lançado nesta obra? O valor total contratual será recalculado.',
+    'Excluir',
+    true,
+    async () => {
+      try {
+        const obra = state.obras.find(o => o.id === obraId);
+        if (obra && obra.valoresExtras) {
+          obra.valoresExtras = obra.valoresExtras.filter(e => e.id !== extraId);
+          obra.updatedAt = new Date().toISOString();
+          obra.synced = false;
+          await dbObras.save(obra);
+
+          await loadLocalData();
+          atualizarModalFinanceiroObraCalculos(obra);
+          renderModalFinanceiroObraList();
+          renderObrasList();
+          renderObrasConcluidasList();
+          renderFinanceiroDashboard();
+          renderExtratoTable();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  );
+};
+
