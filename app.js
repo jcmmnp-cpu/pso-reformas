@@ -162,7 +162,22 @@ function switchTab(tabId) {
     section.classList.toggle('active', section.id === `view-${tabId}`);
   });
   
-  if (tabId === 'backups') {
+  // Re-renderiza o conteúdo da aba ativa para garantir que esteja sempre atualizado com o estado mais recente
+  if (tabId === 'orcamentos') {
+    renderOrcamentosList();
+  } else if (tabId === 'clientes') {
+    renderClientesList();
+  } else if (tabId === 'obras') {
+    renderObrasList();
+  } else if (tabId === 'obras-concluidas') {
+    renderObrasConcluidasList();
+  } else if (tabId === 'financeiro') {
+    populateFinanceiroPeriodoFilter();
+    renderFinanceiroDashboard();
+    renderExtratoTable();
+    renderGastosAvulsosList();
+    renderInvestimentosGrid();
+  } else if (tabId === 'backups') {
     updateSyncCounters();
   }
   
@@ -1460,6 +1475,9 @@ async function handleSaveObra(e) {
     renderObrasList();
     renderObrasConcluidasList();
     renderOrcamentosList(); // Atualiza botão no card do orçamento
+    populateFinanceiroPeriodoFilter();
+    renderFinanceiroDashboard();
+    renderExtratoTable();
     switchTab('obras');
   } catch (err) {
     console.error(err);
@@ -1523,6 +1541,9 @@ async function handleSavePagamento(e) {
     await loadLocalData();
     renderObrasList();
     renderObrasConcluidasList();
+    populateFinanceiroPeriodoFilter();
+    renderFinanceiroDashboard();
+    renderExtratoTable();
   } catch (err) {
     console.error(err);
     showCustomAlert('Erro', 'Não foi possível registrar o pagamento.', false);
@@ -2171,7 +2192,7 @@ function renderExtratoTable() {
   });
 
   // Ordena por data decrescente
-  transacoes.sort((a, b) => b.data.localeCompare(a.data));
+  transacoes.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
 
   // Filtra por tipo
   if (filterTipo !== 'todos') {
